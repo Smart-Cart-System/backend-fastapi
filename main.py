@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from routers import auth
 from database import Base, engine
 import uvicorn
-# Create the database tables
+
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
