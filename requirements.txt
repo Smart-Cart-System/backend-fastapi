@@ -6,3 +6,4 @@ python-jose
 passlib[bcrypt]
 pymysql
 pydantic_settings
+bcrypt
