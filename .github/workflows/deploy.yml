@@ -23,4 +23,4 @@ jobs:
         run: ssh -i ~/.ssh/id_ed25519 smartcart@64.226.127.205 "cd /home/smartcart/backend-fastapi && git pull origin main"
 
       - name: Restart FastAPI Service
-        run: ssh -i ~/.ssh/id_ed25519 smartcart@64.226.127.205 "systemctl restart fastapi"
+        run: ssh -i ~/.ssh/id_ed25519 smartcart@64.226.127.205 "sudo systemctl restart fastapi"
