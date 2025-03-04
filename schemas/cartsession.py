@@ -2,9 +2,9 @@ from pydantic import BaseModel
 from typing import Optional
 
 class CartItemBase(BaseModel):
-    cart_id: str
+    cart_id: int  # Changed from str to int
     user_id: int
-    item_id: str
+    item_id: int  # Changed from str to int
     quantity: Optional[int] = 1
 
 class CartItemCreate(CartItemBase):
@@ -17,6 +17,6 @@ class CartItem(CartItemBase):
         from_attributes = True
 
 class BarcodeRequest(BaseModel):
-    barcode: str
-    cart_id: str
+    barcode: int  
+    cart_id: int  
     user_id: int

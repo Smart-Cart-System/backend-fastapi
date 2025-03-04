@@ -13,21 +13,25 @@ router = APIRouter(
 
 @router.post("/scan-barcode", response_model=Product)
 def scan_barcode(barcode_request: BarcodeRequest, db: Session = Depends(get_db)):
-    # Find product by barcode
-    db_product = product.get_product_by_barcode(db, barcode_request.barcode)
-    if not db_product:
-        raise HTTPException(status_code=404, detail="Product not found")
-    
-    # Add item to cart session
-    cart_item = CartItemCreate(
-    cart_id=barcode_request.cart_id,
-    user_id=barcode_request.user_id,
-    item_id=db_product.item_no_,
-    quantity=1
-)
-    cartsession.create_cart_item(db, cart_item)
-    
-    return db_product
+    try:
+        # Convert barcode to integer for query
+        barcode_int = int(barcode_request.barcode)
+        db_product = product.get_product_by_barcode(db, barcode_int)
+        if not db_product:
+            raise HTTPException(status_code=404, detail="Product not found")
+        
+        # Add item to cart session
+        cart_item = CartItemCreate(
+            cart_id=barcode_request.cart_id,
+            user_id=barcode_request.user_id,
+            item_id=db_product.item_no_,  # This is already an integer
+            quantity=1
+        )
+        cartsession.create_cart_item(db, cart_item)
+        
+        return db_product
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid barcode format")
 
 @router.get("/cart/{cart_id}")
 def get_cart_items(cart_id: str, db: Session = Depends(get_db)):

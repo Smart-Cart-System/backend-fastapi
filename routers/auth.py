@@ -6,7 +6,10 @@ from core.security import create_access_token, verify_password
 from database import get_db
 from schemas.user import User, UserCreate
 
-router = APIRouter()
+router = APIRouter(
+    prefix="/auth",
+    tags=["authentication"]
+)
 
 @router.post("/signup", response_model=User)
 def signup(user: UserCreate, db: Session = Depends(get_db)):

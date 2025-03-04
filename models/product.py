@@ -1,15 +1,14 @@
-from sqlalchemy import Column, Integer, String, Float
+from sqlalchemy import Column, Integer, String, Float, BigInteger
 from database import Base
 
 class ProductionData(Base):
-    __tablename__ = "production_data"
+    __tablename__ = "products_data"
     
-    index = Column(String(255), primary_key=True)
+    item_no_ = Column(Integer, primary_key=True)
     location_code = Column(String(255))
-    item_no_ = Column(String(255))
     description = Column(String(255))
-    description_2 = Column(String(255))
+    description_ar = Column(String(255))
     product_size = Column(String(255))
-    barcode = Column(String(255), index=True)
-    unit_price = Column(String(255))
-    stock = Column(String(255))
+    barcode = Column(BigInteger, index=True)
+    unit_price = Column(Float)  # Changed from String to Float
+    stock = Column(Integer)     # Changed from Float to Integer

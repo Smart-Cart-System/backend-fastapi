@@ -1,43 +1,71 @@
-# Python virtual environment
+# Python virtual environments
 fastapi-env/
+fastapi-env/*
+fastapi-env/Lib/
+fastapi-env/Lib/site-packages/
+fastapi-env/Lib/site-packages/__pycache__/
+fastapi-env/Lib/site-packages/*.pyc
 venv/
 env/
 ENV/
 
 # Python byte-compiled files
 __pycache__/
+**/__pycache__/
 *.py[cod]
+**/*.pyc
+**/*.pyo
+**/*.pyd
 *$py.class
 
-# Distribution / packaging
+# Ignore pip cache
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Ignore distribution / packaging
 dist/
 build/
 *.egg-info/
+.eggs/
+wheels/
 
-# Environment variables
+# Environment variables and secret files
 .env
 .env.local
+.env.*.bkp
+*.env
 
-# IDE files
+# IDE and editor settings
 .idea/
 .vscode/
+*.sublime-workspace
 
-# Database
+# Database and SQLite files
 *.db
 *.sqlite
 *.sqlite3
 
-# Logs
+# Logs and debug files
 logs/
 *.log
-
-# Temporary files
-*.tmp
+*.out
+*.err
 *.bak
 *.swp
 *~
 
-# OS specific files
+# Ignore temporary files
+*.tmp
+*.lock
+*.seed
+*.pid
+*.orig
+*.rej
+
+# Ignore Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Ignore macOS system files
 .DS_Store
 .DS_Store?
 ._*
@@ -45,3 +73,15 @@ logs/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Ignore systemd and service-related files
+*.service
+*.socket
+*.pid
+
+# Ignore compiled Cython files
+*.so
+*.c
+*.cpp
+*.h
+*.pyx

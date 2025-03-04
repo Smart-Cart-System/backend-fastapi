@@ -2,11 +2,15 @@ from fastapi import FastAPI
 from routers import auth, product
 from database import Base, engine
 import uvicorn
-import models.user  # Import to ensure table is created
-import models.product  # Import to ensure mapping is created
-import models.cartsession    # Import to ensure table is created
+# Import ALL models before creating tables
+import models.user
+import models.cartsession
+import models.product
 
+# Print a debug message
+print("Creating database tables...")
 Base.metadata.create_all(bind=engine)
+print("Tables created successfully!")
 
 app = FastAPI()
 

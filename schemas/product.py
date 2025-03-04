@@ -1,17 +1,16 @@
 from pydantic import BaseModel
 
 class ProductBase(BaseModel):
-    barcode: str
+    barcode: int  
 
 class Product(ProductBase):
-    index: str
     location_code: str
-    item_no_: str
+    item_no_: int
     description: str
-    description_2: str
+    description_ar: str  
     product_size: str
-    unit_price: str
-    stock: str
+    unit_price: float   
+    stock: int           
     
     class Config:
         from_attributes = True
