@@ -4,7 +4,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from pydantic import ValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from routers import auth, product, cart, customer_session,item_read, cart_item
+from routers import auth, cart, customer_session,item_read, cart_item
 from database import Base, engine
 from core.error_handling import (
     validation_exception_handler,
