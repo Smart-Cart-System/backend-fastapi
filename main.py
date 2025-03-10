@@ -3,9 +3,9 @@ from fastapi.exceptions import RequestValidationError, ResponseValidationError
 from sqlalchemy.exc import SQLAlchemyError
 from pydantic import ValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
-
-from routers import auth, cart, customer_session,item_read, cart_item
+from routers import auth, cart, customer_session,item_read, cart_item, websocket
 from database import Base, engine
+from fastapi.middleware.cors import CORSMiddleware
 from core.error_handling import (
     validation_exception_handler,
     response_validation_exception_handler,
@@ -29,6 +29,13 @@ print("Tables created successfully!")
 
 app = FastAPI()
 
+origins = [
+    "http://localhost",
+    "http://localhost:8080",
+    "https://64.226.127.205",
+    "https://duckycart.me"
+]
+
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 app.add_exception_handler(ResponseValidationError, response_validation_exception_handler)
 app.add_exception_handler(SQLAlchemyError, sqlalchemy_exception_handler)
@@ -42,6 +49,15 @@ app.include_router(customer_session.router)
 app.include_router(cart.router)
 app.include_router(cart_item.router)
 app.include_router(item_read.router)
+app.include_router(websocket.router)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,  # Change this in production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/")
 def read_root():
