@@ -4,6 +4,7 @@ from database import get_db
 from schemas.cart_item import CartItemRequest, CartItemResponse, CartItemListResponse, RemoveResponse
 from crud import item_read, cart_item
 from typing import List, Dict
+from routers.websocket import notify_clients
 
 router = APIRouter(
     prefix="/cart-items",
@@ -11,7 +12,7 @@ router = APIRouter(
 )
 
 @router.post("/add", response_model=CartItemResponse)
-def add_item_to_cart(request: CartItemRequest, db: Session = Depends(get_db)):
+async def add_item_to_cart(request: CartItemRequest, db: Session = Depends(get_db)):
     """Add item to cart or increment quantity"""
     # Update to pass weight parameter
     cart_item_obj, error = cart_item.add_cart_item(
@@ -44,17 +45,18 @@ def add_item_to_cart(request: CartItemRequest, db: Session = Depends(get_db)):
             "barcode": product_info.barcode
         } if product_info else None
     )
-    
+    await notify_clients(request.sessionID, "cart-updated", request.barcode)
     return response
 
 @router.delete("/remove", response_model=RemoveResponse)
-def remove_item_from_cart(request: CartItemRequest, db: Session = Depends(get_db)):
+async def remove_item_from_cart(request: CartItemRequest, db: Session = Depends(get_db)):
     """Remove item from cart or decrement quantity"""
     result, error = cart_item.remove_cart_item(db, request.sessionID, request.barcode)
     if error:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
     
     if isinstance(result, dict) and "removed" in result:
+        await notify_clients(request.sessionID, "cart-updated", request.barcode)
         return RemoveResponse(
             success=True,
             message="Item removed from cart",
@@ -64,7 +66,7 @@ def remove_item_from_cart(request: CartItemRequest, db: Session = Depends(get_db
         product_info = db.query(cart_item.ProductionData).filter(
             cart_item.ProductionData.item_no_ == result.item_id
         ).first()
-        
+        await notify_clients(request.sessionID, "cart-updated", request.barcode)
         return RemoveResponse(
             success=True,
             message="Item quantity reduced",
