@@ -64,9 +64,12 @@ async def pydantic_validation_exception_handler(request: Request, exc: Validatio
 # Improved handler to differentiate between invalid URLs/actions and not found resources
 async def not_found_exception_handler(request: Request, exc: StarletteHTTPException):
     if exc.status_code == HTTP_404_NOT_FOUND:
-        # Check if this is a route not found error (no detail message)
-        # or a method not allowed error (detail message usually specifies the method)
-        if not exc.detail or "Method" in str(exc.detail) or isinstance(exc.detail, str) and "not found" in exc.detail.lower():
+        # Check for specific route/method errors only
+        route_error = (not exc.detail) or \
+                     ("Method" in str(exc.detail)) or \
+                     (isinstance(exc.detail, str) and "not implemented" in exc.detail.lower())
+        
+        if route_error:
             # This is likely a route not found or method not allowed
             return JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
