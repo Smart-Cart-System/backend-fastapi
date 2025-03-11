@@ -14,3 +14,7 @@ class FraudWarning(FraudWarningCreate):
     
     class Config:
         from_attributes = True
+
+class CartUpdateNotificationRequest(BaseModel):
+    session_id: int
+    barcode: int = 0  # Optional barcode parameter, default 0
