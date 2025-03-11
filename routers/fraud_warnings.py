@@ -1,7 +1,8 @@
+from fastapi import status
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database import get_db
-from schemas.fraud_warnings import FraudWarningCreate, FraudWarning
+from schemas.fraud_warnings import CartUpdateNotificationRequest, FraudWarningCreate, FraudWarning
 from models.customer_session import CustomerSession
 from crud import fraud_warnings
 from typing import List
@@ -35,3 +36,16 @@ async def report_warning(warning: FraudWarningCreate, db: Session = Depends(get_
 def get_session_warnings(session_id: int, db: Session = Depends(get_db)):
     """Get all warnings for a session"""
     return fraud_warnings.get_warnings_by_session(db, session_id)
+
+@router.post("/notify-cart-update", status_code=status.HTTP_200_OK)
+async def notify_cart_update(request: CartUpdateNotificationRequest):
+    """
+    Send a cart-update notification to the WebSocket client without changing the database
+    """
+    await notify_clients(
+        request.session_id,
+        "cart-updated",
+        request.barcode
+    )
+    
+    return {"message": "Notification sent successfully"}
