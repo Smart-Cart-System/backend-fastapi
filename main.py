@@ -33,7 +33,8 @@ origins = [
     "http://localhost",
     "http://localhost:8080",
     "https://64.226.127.205",
-    "https://duckycart.me"
+    "https://duckycart.me",
+    "https://aastsmartcart.vercel.app"
 ]
 
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
@@ -54,7 +55,7 @@ app.include_router(fraud_warnings.router)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,  # Change this in production
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
