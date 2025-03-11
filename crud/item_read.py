@@ -102,3 +102,7 @@ def remove_cart_item(db: Session, session_id: int, barcode: int):
         db.delete(cart_item)
         db.commit()
         return {"removed": True}, None
+    
+def get_product_by_barcode(db: Session, barcode: int):
+    """Get product details by barcode"""
+    return db.query(ProductionData).filter(ProductionData.barcode == barcode).first()
