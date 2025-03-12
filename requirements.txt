@@ -10,3 +10,4 @@ bcrypt
 pydantic[email]
 python-dotenvuvicorn[standard]
 websockets
+python-multipart
