@@ -4,6 +4,8 @@ from database import get_db
 from models.customer_session import CustomerSession
 from schemas.customer_session import SessionCreate, Session, QRScanRequest
 from crud import cart, customer_session
+from core.security import get_current_user
+from models.user import User
 
 router = APIRouter(
     prefix="/customer-session",
@@ -11,7 +13,7 @@ router = APIRouter(
 )
 
 @router.post("/scan-qr", response_model=Session)
-def scan_qr_code(scan_data: QRScanRequest, db: Session = Depends(get_db)):
+def scan_qr_code(scan_data: QRScanRequest, db: Session = Depends(get_db),current_user: User = Depends(get_current_user)):
     """Process QR code scan and create a customer session"""
     try:
         # Find the cart by ID (not by QR code anymore)
