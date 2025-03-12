@@ -1,9 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-import crud.user
-import crud, models, schemas
-from core.security import create_access_token, verify_password
+from datetime import timedelta
 from database import get_db
+from core.security import create_access_token, verify_password
+from crud import user as user_crud
+import crud, models, schemas
 from schemas.user import User, UserCreate
 
 router = APIRouter(
@@ -19,9 +21,25 @@ def signup(user: UserCreate, db: Session = Depends(get_db)):
     return crud.user.create_user(db=db, user=user)
 
 @router.post("/login")
-def login(form_data: schemas.user.UserCreate, db: Session = Depends(get_db)):
-    user = crud.user.get_user_by_username(db, username=form_data.username)
+def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    # Authenticate user
+    user = user_crud.get_user_by_username(db, username=form_data.username)
     if not user or not verify_password(form_data.password, user.hashed_password):
-        raise HTTPException(status_code=400, detail="Incorrect username or password")
-    access_token = create_access_token(data={"sub": user.username})
-    return {"access_token": access_token, "token_type": "bearer"}
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    # Create access token with 10 minutes expiration
+    access_token = create_access_token(
+        data={"sub": user.username},
+        expires_delta=timedelta(minutes=10)
+    )
+    
+    # Return token and user ID
+    return {
+        "access_token": access_token, 
+        "token_type": "bearer",
+        "user_id": user.id
+    }
