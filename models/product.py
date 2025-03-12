@@ -10,5 +10,6 @@ class ProductionData(Base):
     description_ar = Column(String(255))
     product_size = Column(String(255))
     barcode = Column(BigInteger, index=True)
-    unit_price = Column(Float)  # Changed from String to Float
-    stock = Column(Integer)     # Changed from Float to Integer
+    unit_price = Column(Float)
+    stock = Column(Integer)
+    image_url = Column(String(255), nullable=True)
