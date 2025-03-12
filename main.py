@@ -3,7 +3,7 @@ from fastapi.exceptions import RequestValidationError, ResponseValidationError
 from sqlalchemy.exc import SQLAlchemyError
 from pydantic import ValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
-from routers import auth, cart, customer_session,item_read, cart_item, websocket,fraud_warnings
+from routers import auth, cart, customer_session,item_read, cart_item, websocket,fraud_warnings,promotion
 from database import Base, engine
 from fastapi.middleware.cors import CORSMiddleware
 from core.error_handling import (
@@ -52,6 +52,7 @@ app.include_router(cart_item.router)
 app.include_router(item_read.router)
 app.include_router(websocket.router)
 app.include_router(fraud_warnings.router)
+app.include_router(promotion.router)
 
 app.add_middleware(
     CORSMiddleware,
