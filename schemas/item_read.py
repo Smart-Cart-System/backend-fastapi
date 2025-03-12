@@ -10,6 +10,8 @@ class ItemReadResponse(BaseModel):
     description_ar: str
     unit_price: float
     product_size: str
+    barcode: int 
+    image_url: str = None 
     
     class Config:
         from_attributes = True
