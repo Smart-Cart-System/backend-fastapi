@@ -29,8 +29,6 @@ async def add_item_to_cart(request: CartItemRequest, db: Session = Depends(get_d
     product_info = db.query(cart_item.ProductionData).filter(
         cart_item.ProductionData.item_no_ == cart_item_obj.item_id
     ).first()
-    
-    # Build response with both cart item and product data
     response = CartItemResponse(
         session_id=cart_item_obj.session_id, 
         item_id=cart_item_obj.item_id,
@@ -42,7 +40,8 @@ async def add_item_to_cart(request: CartItemRequest, db: Session = Depends(get_d
             "description_ar": product_info.description_ar,
             "unit_price": product_info.unit_price,
             "product_size": product_info.product_size,
-            "barcode": product_info.barcode
+            "barcode": product_info.barcode,
+            "image_url": product_info.image_url 
         } if product_info else None
     )
     await notify_clients(request.sessionID, "cart-updated", request.barcode)
@@ -81,7 +80,8 @@ async def remove_item_from_cart(request: CartItemRequest, db: Session = Depends(
                     "description_ar": product_info.description_ar,
                     "unit_price": product_info.unit_price,
                     "product_size": product_info.product_size,
-                    "barcode": product_info.barcode
+                    "barcode": product_info.barcode,
+                    "image_url": product_info.image_url
                 } if product_info else None
             )
         )
@@ -109,7 +109,8 @@ def get_cart_items_by_session(session_id: int, db: Session = Depends(get_db)):
                 "description_ar": product_info.description_ar,
                 "unit_price": product_info.unit_price,
                 "product_size": product_info.product_size,
-                "barcode": product_info.barcode
+                "barcode": product_info.barcode,
+                "image_url": product_info.image_url
             } if product_info else None
         ))
     
