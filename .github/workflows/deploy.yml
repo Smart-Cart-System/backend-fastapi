@@ -22,6 +22,7 @@ jobs:
 
       - name: Pull the Latest Code from GitHub
         run: ssh -i ~/.ssh/id_ed25519 smartcart@64.226.127.205 "cd /home/smartcart/backend-fastapi && git pull origin main"
-
+      - name: Install Dependencies
+        run: ssh -i ~/.ssh/id_ed25519 smartcart@64.226.127.205 "cd /home/smartcart/backend-fastapi && pip install requirements.txt"
       - name: Restart FastAPI Service
         run: ssh -i ~/.ssh/id_ed25519 smartcart@64.226.127.205 "sudo systemctl restart fastapi"

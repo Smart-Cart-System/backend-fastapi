@@ -15,8 +15,12 @@ class Settings(BaseSettings):
 
     # JWT Settings
     SECRET_KEY: str
-    ALGORITHM: str
+    ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    FRONTEND_TOKEN_EXPIRE_HOURS: int = 6
+    
+    # Pi Authentication
+    PI_API_KEY: str = "PI_SECRET_KEY_CHANGE_THIS_IN_PRODUCTION"
     
     class Config:
         env_file = ".env"

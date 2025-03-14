@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
+from core.security import get_current_user
 from database import get_db
+from models.user import User
 from schemas.promotion import PromotionResponse
 from crud import promotion
 
@@ -11,7 +13,7 @@ router = APIRouter(
 )
 
 @router.get("/", response_model=List[PromotionResponse])
-def get_active_promotions(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+def get_active_promotions(skip: int = 0, limit: int = 100, db: Session = Depends(get_db),current_user: User = Depends(get_current_user)):
     """Get all currently active promotions"""
     promotions = promotion.get_active_promotions(db, skip=skip, limit=limit)
     return promotions

@@ -1,6 +1,7 @@
 from fastapi import status
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from core.security import verify_pi_api_key
 from database import get_db
 from schemas.fraud_warnings import CartUpdateNotificationRequest, FraudWarningCreate, FraudWarning
 from models.customer_session import CustomerSession
@@ -14,7 +15,7 @@ router = APIRouter(
 )
 
 @router.post("/", response_model=FraudWarning)
-async def report_warning(warning: FraudWarningCreate, db: Session = Depends(get_db)):
+async def report_warning(warning: FraudWarningCreate, db: Session = Depends(get_db),pi_authenticated: bool = Depends(verify_pi_api_key) ):
     """Report a fraud warning from the Raspberry Pi"""
     # First validate that the session exists
     session = db.query(CustomerSession).filter(CustomerSession.session_id == warning.session_id).first()
@@ -38,7 +39,7 @@ def get_session_warnings(session_id: int, db: Session = Depends(get_db)):
     return fraud_warnings.get_warnings_by_session(db, session_id)
 
 @router.post("/notify-cart-update", status_code=status.HTTP_200_OK)
-async def notify_cart_update(request: CartUpdateNotificationRequest):
+async def notify_cart_update(request: CartUpdateNotificationRequest,pi_authenticated: bool = Depends(verify_pi_api_key)):
     """
     Send a cart-update notification to the WebSocket client without changing the database
     """
