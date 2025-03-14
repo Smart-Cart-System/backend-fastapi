@@ -8,6 +8,6 @@ pymysql
 pydantic_settings
 bcrypt
 pydantic[email]
-python-dotenvuvicorn[standard]
+python-dotenv
 websockets
 python-multipart
