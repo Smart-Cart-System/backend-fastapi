@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from core.security import get_current_user, verify_pi_api_key
 from database import get_db
+from models.user import User
 from schemas.cart_item import CartItemRequest, CartItemResponse, CartItemListResponse, RemoveResponse
 from crud import item_read, cart_item
 from typing import List, Dict
@@ -12,7 +14,7 @@ router = APIRouter(
 )
 
 @router.post("/add", response_model=CartItemResponse)
-async def add_item_to_cart(request: CartItemRequest, db: Session = Depends(get_db)):
+async def add_item_to_cart(request: CartItemRequest, db: Session = Depends(get_db),pi_authenticated: bool = Depends(verify_pi_api_key)):
     """Add item to cart or increment quantity"""
     # Update to pass weight parameter
     cart_item_obj, error = cart_item.add_cart_item(
@@ -48,7 +50,7 @@ async def add_item_to_cart(request: CartItemRequest, db: Session = Depends(get_d
     return response
 
 @router.delete("/remove", response_model=RemoveResponse)
-async def remove_item_from_cart(request: CartItemRequest, db: Session = Depends(get_db)):
+async def remove_item_from_cart(request: CartItemRequest, db: Session = Depends(get_db),pi_authenticated: bool = Depends(verify_pi_api_key)):
     """Remove item from cart or decrement quantity"""
     result, error = cart_item.remove_cart_item(db, request.sessionID, request.barcode)
     if error:
@@ -87,7 +89,7 @@ async def remove_item_from_cart(request: CartItemRequest, db: Session = Depends(
         )
 
 @router.get("/session/{session_id}", response_model=CartItemListResponse)
-def get_cart_items_by_session(session_id: int, db: Session = Depends(get_db)):
+def get_cart_items_by_session(session_id: int, db: Session = Depends(get_db),current_user: User = Depends(get_current_user)):
     """Get all items in a user's cart session"""
     items, total = cart_item.get_cart_items_by_session(db, session_id)
     

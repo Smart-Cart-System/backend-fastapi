@@ -46,6 +46,12 @@ app = FastAPI(
     description="API for the smart shopping cart",
     version="1.0",
     servers=[{"url": "https://api.duckycart.me", "description": "Production server"}],
+    openapi_tags=[
+        {"name": "authentication", "description": "User authentication operations"},
+        {"name": "customer_session", "description": "Customer session operations"},
+        # ... other tags
+    ],
+    swagger_ui_parameters={"defaultModelsExpandDepth": -1}
 )
 
 # Add middlewares from the middleware module

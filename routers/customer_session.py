@@ -4,7 +4,7 @@ from database import get_db
 from models.customer_session import CustomerSession
 from schemas.customer_session import SessionCreate, Session, QRScanRequest
 from crud import cart, customer_session
-from core.security import get_current_user
+from core.security import get_current_user, verify_pi_api_key
 from models.user import User
 
 router = APIRouter(
@@ -41,7 +41,7 @@ def scan_qr_code(scan_data: QRScanRequest, db: Session = Depends(get_db),current
         )
 
 @router.get("/cart/{cart_id}", response_model=Session)
-def get_session_by_cart(cart_id: int, db: Session = Depends(get_db)):
+def get_session_by_cart(cart_id: int, db: Session = Depends(get_db),pi_authenticated: bool = Depends(verify_pi_api_key)):
     """Get the latest session for a specific cart"""
     # Use a simpler query that doesn't join with cart_items
     db_session = db.query(CustomerSession).filter(

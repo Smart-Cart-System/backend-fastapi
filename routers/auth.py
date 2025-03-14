@@ -3,7 +3,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from datetime import timedelta
 from database import get_db
-from core.security import create_access_token, verify_password
+from core.security import create_frontend_token, verify_password
 from crud import user as user_crud
 import crud, models, schemas
 from schemas.user import User, UserCreate
@@ -31,15 +31,14 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    # Create access token with 10 minutes expiration
-    access_token = create_access_token(
-        data={"sub": user.username},
-        expires_delta=timedelta(minutes=10)
+    # Create access token with 6 hours expiration
+    access_token = create_frontend_token(
+        data={"sub": user.username}
     )
     
     # Return token and user ID
     return {
         "access_token": access_token, 
         "token_type": "bearer",
-        "user_id": user.id
+        "user_id": user.id,
     }
