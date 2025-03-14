@@ -3,7 +3,7 @@ import json
 import sys
 
 # Configuration
-API_URL = "http://127.0.0.1:8000"  # Change to your server address
+API_URL = "https://api.duckycart.me"  # Change to your server address
 
 def read_item(session_id, barcode):
     """Test reading an item with the barcode scanner"""
@@ -14,12 +14,18 @@ def read_item(session_id, barcode):
             "barcode": int(barcode)
         }
         
-        # Make API request
+        # Add Pi API Key header
+        headers = {
+            "X-API-Key": "put your secret key here",
+            "Content-Type": "application/json"
+        }
+        
+        # Make API request with headers
         url = f"{API_URL}/items/read"
         print(f"Sending POST request to {url}")
         print(f"Request data: {json.dumps(item_data, indent=2)}")
         
-        response = requests.post(url, json=item_data)
+        response = requests.post(url, json=item_data, headers=headers)
         
         # Process response
         if response.status_code == 200:
