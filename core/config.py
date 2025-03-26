@@ -22,6 +22,8 @@ class Settings(BaseSettings):
     # Pi Authentication
     PI_API_KEY: str = "PI_SECRET_KEY_CHANGE_THIS_IN_PRODUCTION"
     
+    XPAY_API_KEY: Optional[str] = None
+
     class Config:
         env_file = ".env"
         case_sensitive = True
