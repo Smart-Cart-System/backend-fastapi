@@ -23,7 +23,8 @@ from routers import (
     cart_item, 
     websocket,
     fraud_warnings,
-    promotion
+    promotion,
+    payment
 )
 
 # Import models for table creation
@@ -74,6 +75,7 @@ app.include_router(item_read.router)
 app.include_router(websocket.router)
 app.include_router(fraud_warnings.router)
 app.include_router(promotion.router)
+app.include_router(payment.router)
 
 # Root endpoint
 @app.get("/")

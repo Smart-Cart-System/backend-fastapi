@@ -19,7 +19,7 @@ class Session(SessionBase):
 
 # Request model for scanning QR code
 class QRScanRequest(BaseModel):
-    cartID: int
+    token: str
     userID: int
 
 # Schema for finishing a session
