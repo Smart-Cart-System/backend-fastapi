@@ -11,3 +11,6 @@ pydantic[email]
 python-dotenv
 websockets
 python-multipart
+qrcode[pil]
+httpx
+pyjwt

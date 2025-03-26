@@ -1,5 +1,7 @@
 from sqlalchemy import Column, Integer, String, Enum
 from database import Base
+from sqlalchemy.orm import relationship
+
 
 class Cart(Base):
     __tablename__ = "carts"
@@ -9,3 +11,4 @@ class Cart(Base):
                        name='cart_status_enum'), default='available')
     qrcode_token = Column(String(255), unique=True, index=True)
     battery_level = Column(Integer, default=100)
+    

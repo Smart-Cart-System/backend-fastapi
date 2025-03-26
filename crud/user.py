@@ -6,6 +6,8 @@ from core.security import get_password_hash
 def get_user_by_username(db: Session, username: str):
     return db.query(User).filter(User.username == username).first()  # Use the User class
 
+def get_user_by_id(db: Session, user_id: int):
+    return db.query(User).filter(User.id == user_id).first()  # Use the User class
 def create_user(db: Session, user: UserCreate):
     hashed_password = get_password_hash(user.password)
     db_user = User(

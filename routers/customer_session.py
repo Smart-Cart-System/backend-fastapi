@@ -6,18 +6,33 @@ from schemas.customer_session import SessionCreate, Session, QRScanRequest
 from crud import cart, customer_session
 from core.security import get_current_user, verify_pi_api_key
 from models.user import User
+from fastapi.responses import StreamingResponse
+
 
 router = APIRouter(
     prefix="/customer-session",
     tags=["customer_session"]
 )
 
+
+
+@router.get("/qr/{cart_id}")
+def get_qr(cart_id: int, db: Session = Depends(get_db)):
+    db_cart = cart.get_cart_by_id(db, cart_id)
+    if not db_cart:
+        raise HTTPException(status_code=404, detail="Cart not found")
+    return StreamingResponse(customer_session.generate_qr(cart_id), media_type="image/png")
+
 @router.post("/scan-qr", response_model=Session)
-def scan_qr_code(scan_data: QRScanRequest, db: Session = Depends(get_db),current_user: User = Depends(get_current_user)):
+def scan_qr_code(scan_data: QRScanRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """Process QR code scan and create a customer session"""
     try:
+        cartid = customer_session.validate_qr_token(scan_data.token)
+        if not cartid:
+            raise HTTPException(status_code=401, detail="Invalid or expired QR code.")
+        
         # Find the cart by ID (not by QR code anymore)
-        db_cart = cart.get_cart_by_id(db, cart_id=scan_data.cartID)
+        db_cart = cart.get_cart_by_id(db, cart_id=cartid)
         if not db_cart:
             raise HTTPException(status_code=404, detail="Cart not found")
         
@@ -41,7 +56,7 @@ def scan_qr_code(scan_data: QRScanRequest, db: Session = Depends(get_db),current
         )
 
 @router.get("/cart/{cart_id}", response_model=Session)
-def get_session_by_cart(cart_id: int, db: Session = Depends(get_db),pi_authenticated: bool = Depends(verify_pi_api_key)):
+def get_session_by_cart(cart_id: int, db: Session = Depends(get_db), pi_authenticated: bool = Depends(verify_pi_api_key)):
     """Get the latest session for a specific cart"""
     # Use a simpler query that doesn't join with cart_items
     db_session = db.query(CustomerSession).filter(
@@ -60,7 +75,6 @@ def get_active_session_for_user(user_id: int, db: Session = Depends(get_db)):
     if db_session is None:
         raise HTTPException(status_code=404, detail="No active session found for this user")
     return db_session
-
 
 @router.post("/{session_id}/checkout", response_model=Session)
 def checkout_session(session_id: int, db: Session = Depends(get_db)):
