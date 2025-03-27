@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime
+from schemas.cart_item import CartItemListResponse
 
 class SessionBase(BaseModel):
     user_id: int
@@ -25,3 +26,11 @@ class QRScanRequest(BaseModel):
 # Schema for finishing a session
 class SessionUpdate(BaseModel):
     is_active: bool
+
+class SessionDetailsResponse(CartItemListResponse):
+    created_at: datetime
+
+class RecentSessionsResponse(BaseModel):
+    sessions: List[SessionDetailsResponse]
+    class Config:
+        from_attributes = True
