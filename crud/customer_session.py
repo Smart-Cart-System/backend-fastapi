@@ -52,7 +52,7 @@ def finish_session(db: Session, session_id: int):
 
 
 SECRET_KEY = "DuckyCart_2025_V1"
-EXPIRATION_MINUTES = 10
+EXPIRATION_MINUTES = 1
 
 def generate_qr(data: str) -> BytesIO:
     """Generates a QR code and returns it as an in-memory binary stream."""

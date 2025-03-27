@@ -44,7 +44,7 @@ def scan_qr_code(scan_data: QRScanRequest, db: Session = Depends(get_db), curren
             )
         
         # Create a session
-        session = SessionCreate(user_id=scan_data.userID, cart_id=scan_data.cartID)
+        session = SessionCreate(user_id=scan_data.userID, cart_id=cartid)
         new_session = customer_session.create_session(db, session)
         
         return new_session
