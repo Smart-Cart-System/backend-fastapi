@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_NAME=${DB_NAME}
+      - SECRET_KEY=${SECRET_KEY}
+      - ALGORITHM=HS256
+      - ACCESS_TOKEN_EXPIRE_MINUTES=30
+      - FRONTEND_TOKEN_EXPIRE_HOURS=6
+      - PI_API_KEY=${PI_API_KEY}
+    volumes:
+      - .:/app
+    networks:
+      - smartcart-network
+
+networks:
+  smartcart-network:
+    driver: bridge
