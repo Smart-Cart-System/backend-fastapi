@@ -1,27 +1,28 @@
-name: Deploy to DigitalOcean
+name: Auto Deploy FastAPI
 
 on:
   push:
     branches:
-      - main
+      - main  # Change to the branch you want to deploy
   workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+      - name: Checkout the Repository
+        uses: actions/checkout@v3
 
-      - name: Deploy to DigitalOcean via SSH
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.DO_HOST }}
-          username: ${{ secrets.DO_USER }}
-          key: ${{ secrets.DO_SSH_KEY }}
-          script: |
-            cd ~/backend-fastapi
-            git pull
-            docker-compose up -d --remove-orphans
-            docker system prune -af
+      - name: Set up SSH Key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          echo "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+
+      - name: Pull the Latest Code from GitHub
+        run: ssh -i ~/.ssh/id_ed25519 smartcart@64.226.127.205 "cd /home/smartcart/backend-fastapi && git pull origin main"
+      - name: Install Dependencies
+        run: ssh -i ~/.ssh/id_ed25519 smartcart@64.226.127.205 "cd /home/smartcart/backend-fastapi && pip install -r requirements.txt"
+      - name: Restart FastAPI Service
+        run: ssh -i ~/.ssh/id_ed25519 smartcart@64.226.127.205 "sudo systemctl restart fastapi"
