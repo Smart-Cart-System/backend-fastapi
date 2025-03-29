@@ -55,24 +55,13 @@ SECRET_KEY = "DuckyCart_2025_V1"
 EXPIRATION_MINUTES = 1
 
 def generate_qr(data: str) -> BytesIO:
-    """Generates a QR code and returns it as an in-memory binary stream."""
-    qr = qrcode.QRCode(
-        version=None,  # Automatically adjusts size
-        error_correction=qrcode.constants.ERROR_CORRECT_H,
-        box_size=15,
-        border=4,
-    )
+    """Generates a QR code Token and returns it"""
     expires_at = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=EXPIRATION_MINUTES)
     payload = {
         "cartid": data,
         "exp": expires_at
     }
-    qr.add_data(jwt.encode(payload, SECRET_KEY, algorithm="HS256"))
-    qr.make(fit=True)
-    img_bytes = BytesIO()
-    qr.make_image(fill_color="#007058", back_color="#FFFFFF").save(img_bytes, format="PNG")
-    img_bytes.seek(0)
-    return img_bytes
+    return jwt.encode(payload, SECRET_KEY, algorithm="HS256")
 
 def validate_qr_token(token: str):
     """Validate the QR token and extract cart ID."""

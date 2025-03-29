@@ -21,7 +21,7 @@ def get_qr(cart_id: int, db: Session = Depends(get_db)):
     db_cart = cart.get_cart_by_id(db, cart_id)
     if not db_cart:
         raise HTTPException(status_code=404, detail="Cart not found")
-    return StreamingResponse(customer_session.generate_qr(cart_id), media_type="image/png")
+    return customer_session.generate_qr(cart_id)
 
 @router.post("/scan-qr", response_model=Session)
 def scan_qr_code(scan_data: QRScanRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
@@ -44,7 +44,7 @@ def scan_qr_code(scan_data: QRScanRequest, db: Session = Depends(get_db), curren
             )
         
         # Create a session
-        session = SessionCreate(user_id=scan_data.userID, cart_id=cartid)
+        session = SessionCreate(user_id=current_user.id, cart_id=cartid)
         new_session = customer_session.create_session(db, session)
         
         return new_session
