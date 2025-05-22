@@ -25,7 +25,8 @@ from routers import (
     fraud_warnings,
     promotion,
     payment,
-    user
+    user,
+    checklist
 )
 
 # Import models for table creation
@@ -36,6 +37,7 @@ import models.product
 import models.cart_item
 import models.fruad_warnings
 import models.item_read
+import models.checklist
 
 # Create database tables
 print("Creating database tables...")
@@ -78,6 +80,7 @@ app.include_router(fraud_warnings.router)
 app.include_router(promotion.router)
 app.include_router(payment.router)
 app.include_router(user.router)
+app.include_router(checklist.router)
 
 # Root endpoint
 @app.get("/")
