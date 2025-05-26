@@ -6,7 +6,7 @@ from models.user import User
 from schemas.cart_item import CartItemRequest, CartItemResponse, CartItemListResponse, RemoveResponse
 from crud import item_read, cart_item
 from typing import List, Dict
-from routers.websocket import notify_clients
+from services.websocket_service import notify_clients
 
 router = APIRouter(
     prefix="/cart-items",

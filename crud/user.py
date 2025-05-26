@@ -19,8 +19,10 @@ def create_user(db: Session, user: UserCreate):
         username=user.username,
         email=user.email,
         hashed_password=hashed_password,
-        mobile=user.mobile,  
-        age=user.age       
+        mobile_number=user.mobile_number,  
+        age=user.age,
+        full_name=user.full_name,
+        address=user.address,    
     )
     db.add(db_user)
     db.commit()
