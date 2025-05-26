@@ -26,7 +26,10 @@ from routers import (
     promotion,
     payment,
     user,
-    checklist
+    checklist,
+    sse,
+    shared_checklist,
+    ocr
 )
 
 # Import models for table creation
@@ -49,7 +52,8 @@ app = FastAPI(
     title="Smart Cart API",
     description="API for the smart shopping cart",
     version="1.0",
-    servers=[{"url": "https://api.duckycart.me", "description": "Production server"}],
+    servers=[{"url": "http://127.0.0.1:8000", "description": "Local development server"},
+        {"url": "https://api.duckycart.me", "description": "Production server"}],
     openapi_tags=[
         {"name": "authentication", "description": "User authentication operations"},
         {"name": "customer_session", "description": "Customer session operations"},
@@ -81,6 +85,9 @@ app.include_router(promotion.router)
 app.include_router(payment.router)
 app.include_router(user.router)
 app.include_router(checklist.router)
+app.include_router(sse.router)
+app.include_router(shared_checklist.router)
+app.include_router(ocr.router)
 
 # Root endpoint
 @app.get("/")
