@@ -7,13 +7,16 @@ from crud import cart, customer_session
 from core.security import get_current_user, verify_pi_api_key
 from models.user import User
 from fastapi.responses import StreamingResponse
+from services.websocket_service import notify_hardware_clients
+from core.security import oauth2_scheme
+from routers.sse import send_authenticated_message
+from schemas.sse import SSEAuthMessage
 
 
 router = APIRouter(
     prefix="/customer-session",
     tags=["customer_session"]
 )
-
 
 
 @router.get("/qr/{cart_id}")
@@ -24,36 +27,37 @@ def get_qr(cart_id: int, db: Session = Depends(get_db)):
     return customer_session.generate_qr(cart_id)
 
 @router.post("/scan-qr", response_model=Session)
-def scan_qr_code(scan_data: QRScanRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    """Process QR code scan and create a customer session"""
+async def scan_qr_code(scan_data: QRScanRequest, db: Session = Depends(get_db), 
+                       current_user: User = Depends(get_current_user), 
+                       token: str = Depends(oauth2_scheme)):
     try:
-        cartid = customer_session.validate_qr_token(scan_data.token)
-        if not cartid:
+        cart_id = customer_session.validate_qr_token(scan_data.token)
+        if not cart_id:
             raise HTTPException(status_code=401, detail="Invalid or expired QR code.")
         
-        # Find the cart by ID (not by QR code anymore)
-        db_cart = cart.get_cart_by_id(db, cart_id=cartid)
-        if not db_cart:
-            raise HTTPException(status_code=404, detail="Cart not found")
-        
-        # Check if cart is available
-        if db_cart.status != 'available':
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, 
-                detail=f"Cart is not available (current status: {db_cart.status})"
+        new_session, error = await customer_session.create_session_from_qr(
+            db, cart_id, current_user.id, token)
+            
+        if error:
+            raise HTTPException(status_code=400, detail=error)
+            
+        # Handle SSE notification here (API-specific)
+        await send_authenticated_message(
+            cart_id=new_session.cart_id,
+            auth_message=SSEAuthMessage(
+                session_id=new_session.session_id,
+                token=token,
+                event_type="session-started"
             )
-        
-        # Create a session
-        session = SessionCreate(user_id=current_user.id, cart_id=cartid)
-        new_session = customer_session.create_session(db, session)
-        
-        return new_session
-        
-    except ValueError:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid cart ID format"
         )
+        notify_hardware_clients(
+            cart_id=new_session.cart_id,
+            command="session_started",
+            session_id=new_session.session_id
+        )
+        return new_session
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid cart ID format")
 
 @router.get("/cart/{cart_id}", response_model=Session)
 def get_session_by_cart(cart_id: int, db: Session = Depends(get_db), pi_authenticated: bool = Depends(verify_pi_api_key)):

@@ -5,7 +5,7 @@ from database import get_db
 from models.user import User
 from schemas.item_read import ItemReadRequest, ItemReadResponse
 from crud import item_read
-from routers.websocket import notify_clients
+from services.websocket_service import notify_clients
 router = APIRouter(
     prefix="/items",
     tags=["items"]

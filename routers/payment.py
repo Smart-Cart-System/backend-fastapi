@@ -8,7 +8,7 @@ from crud.user import get_user_by_id
 from database import get_db
 from models.payment import PaymentStatusEnum
 from dotenv import load_dotenv
-from routers.websocket import notify_clients
+from services.websocket_service import notify_clients
 import os
 import json
 import logging
@@ -46,7 +46,7 @@ async def create_payment(session_id: int, db: Session = Depends(get_db)):
         customer_name=user.username + " " + user.username,
         customer_email=user.email,
         allow_recurring_payments=False,
-        customer_mobile=user.mobile,
+        customer_mobile=user.mobile_number,
         cc_email=user.email,
         amount=Amount(amount=total_price, currency="EGP"),
         community_id="vBMeRBW",
@@ -109,7 +109,7 @@ async def payment_webhook(payload: PaymentCallbackResponse, db: Session = Depend
             payment.transaction_status = PaymentStatusEnum.successful
             payment.transaction_id = payload.transaction_id
             await notify_clients(payment.session_id, "Payment successful", 0)
-            # finish_session(db, payment.session_id)
+            finish_session(db, payment.session_id)
         elif status == "failed":
             if payment.retry_attempts < 3:
                 payment.transaction_status = PaymentStatusEnum.failed

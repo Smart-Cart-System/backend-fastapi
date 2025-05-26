@@ -6,6 +6,7 @@ from schemas.customer_session import SessionCreate, SessionUpdate
 from io import BytesIO
 import qrcode
 import jwt
+from crud.cart import get_cart_by_id
 
 def create_session(db: Session, session: SessionCreate):
     # First update cart status to 'in use'
@@ -72,3 +73,20 @@ def validate_qr_token(token: str):
         return None  # QR Code expired
     except jwt.InvalidTokenError:
         return None  # Invalid token
+
+async def create_session_from_qr(db: Session, cart_id: int, user_id: int, token: str):
+    """Create a session from QR code with validation"""
+    # Get cart and validate availability (returns tuple with result and error)
+    db_cart = get_cart_by_id(db, cart_id=cart_id)
+    if not db_cart:
+        return None, "Cart not found"
+    
+    if db_cart.status != 'available':
+        return None, f"Cart is not available (current status: {db_cart.status})"
+    
+    # Create session
+    session = SessionCreate(user_id=user_id, cart_id=cart_id)
+    new_session = create_session(db, session)
+    
+    # Return session (controller handles notifications)
+    return new_session, None

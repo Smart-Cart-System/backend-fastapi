@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from models.cart import Cart
 from schemas.cart import CartCreate
+from models.customer_session import CustomerSession
 
 def get_carts(db: Session, skip: int = 0, limit: int = 100):
     return db.query(Cart).offset(skip).limit(limit).all()
@@ -10,6 +11,14 @@ def get_cart_by_id(db: Session, cart_id: int):
 
 def get_cart_by_qrcode(db: Session, qrcode_token: str):
     return db.query(Cart).filter(Cart.qrcode_token == qrcode_token).first()
+
+def get_cart_by_session(db: Session, session_id: int):
+    db_session = (
+        db.query(CustomerSession)
+          .filter(CustomerSession.session_id == session_id)
+          .first()
+    )
+    return db_session.cart_id if db_session else None
 
 def create_cart(db: Session, cart: CartCreate):
     db_cart = Cart(**cart.dict())

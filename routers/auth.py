@@ -38,7 +38,13 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     
     # Return token and user ID
     return {
+        "username": user.username,
+        "email": user.email,
+        "phone_number": user.mobile_number,
+        "full_name": user.full_name,
         "access_token": access_token, 
         "token_type": "bearer",
         "user_id": user.id,
+        "expires_in": timedelta(hours=6).total_seconds(),
+        "address": user.address 
     }

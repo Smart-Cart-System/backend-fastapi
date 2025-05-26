@@ -7,7 +7,7 @@ from schemas.fraud_warnings import CartUpdateNotificationRequest, FraudWarningCr
 from models.customer_session import CustomerSession
 from crud import fraud_warnings
 from typing import List
-from routers.websocket import notify_clients
+from services.websocket_service import notify_clients
 
 router = APIRouter(
     prefix="/fraud-warnings",
