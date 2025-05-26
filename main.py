@@ -27,7 +27,9 @@ from routers import (
     payment,
     user,
     checklist,
-    sse
+    sse,
+    shared_checklist,
+    ocr
 )
 
 # Import models for table creation
@@ -84,6 +86,8 @@ app.include_router(payment.router)
 app.include_router(user.router)
 app.include_router(checklist.router)
 app.include_router(sse.router)
+app.include_router(shared_checklist.router)
+app.include_router(ocr.router)
 
 # Root endpoint
 @app.get("/")
