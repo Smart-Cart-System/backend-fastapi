@@ -24,6 +24,9 @@ class Settings(BaseSettings):
     
     XPAY_API_KEY: Optional[str] = None
 
+    # Google Cloud settings
+    GOOGLE_APPLICATION_CREDENTIALS: Optional[str] = None
+
     class Config:
         env_file = ".env"
         case_sensitive = True
