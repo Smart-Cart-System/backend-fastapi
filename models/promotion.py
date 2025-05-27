@@ -7,6 +7,7 @@ class PromotionData(Base):
     
     index = Column(Integer, primary_key=True)
     item_no_ = Column(Integer, ForeignKey("products_data.item_no_"))
+    aisle_id = Column(Integer, ForeignKey("aisles.id"), nullable=True)  # New column
     description_ar = Column(String(255))
     item_category_code = Column(String(255))
     promotion_description = Column(String(255))
@@ -14,5 +15,6 @@ class PromotionData(Base):
     promotion_starting_date = Column(Date)
     promotion_ending_date = Column(Date)
     
-    # Relationship to product
+    # Relationships
     product = relationship("ProductionData")
+    aisle = relationship("Aisle", back_populates="promotions")  # New relationship

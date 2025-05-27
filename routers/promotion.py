@@ -25,3 +25,27 @@ def get_promotion_for_item(item_no: int, db: Session = Depends(get_db)):
     if promo is None:
         raise HTTPException(status_code=404, detail=f"No active promotion found for item {item_no}")
     return promo
+
+@router.get("/aisle/{aisle_id}", response_model=List[PromotionResponse])
+def get_aisle_promotions(
+    aisle_id: int,
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get all active promotions for a specific aisle"""
+    promotions = promotion.get_aisle_promotions(db, aisle_id, skip, limit)
+    return promotions
+
+@router.get("/session/{session_id}", response_model=List[PromotionResponse])
+def get_session_location_promotions(
+    session_id: int,
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get promotions based on the user's current location"""
+    promotions = promotion.get_session_location_promotions(db, session_id, skip, limit)
+    return promotions
