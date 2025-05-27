@@ -24,3 +24,6 @@ class CustomerSession(Base):
     foreign_keys="CartItem.session_id",
     viewonly=True  # Add this parameter
 )
+
+    # Add to existing model
+    locations = relationship("SessionLocation", back_populates="session")
