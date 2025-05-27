@@ -19,5 +19,9 @@ class PromotionResponse(BaseModel):
     discount_percentage: float
     image_url: Optional[str] = None
     
+    # Aisle data
+    aisle_id: Optional[int] = None
+    aisle_name: Optional[str] = None
+    
     class Config:
         from_attributes = True
