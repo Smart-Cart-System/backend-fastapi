@@ -31,7 +31,8 @@ from routers import (
     shared_checklist,
     ocr,
     aisle,
-    session_location
+    session_location,
+    aisle_layout
 )
 
 # Import models for table creation
@@ -92,6 +93,7 @@ app.include_router(shared_checklist.router)
 app.include_router(ocr.router)
 app.include_router(aisle.router)
 app.include_router(session_location.router)
+app.include_router(aisle_layout.router)
 
 # Root endpoint
 @app.get("/")
