@@ -32,7 +32,8 @@ from routers import (
     ocr,
     aisle,
     session_location,
-    aisle_layout
+    aisle_layout,
+    feedback
 )
 
 # Import models for table creation
@@ -94,6 +95,7 @@ app.include_router(ocr.router)
 app.include_router(aisle.router)
 app.include_router(session_location.router)
 app.include_router(aisle_layout.router)
+app.include_router(feedback.router)
 
 # Root endpoint
 @app.get("/")
