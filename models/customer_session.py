@@ -27,3 +27,4 @@ class CustomerSession(Base):
 
     # Add to existing model
     locations = relationship("SessionLocation", back_populates="session")
+    feedback = relationship("Feedback", back_populates="session", uselist=False)
