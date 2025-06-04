@@ -35,7 +35,8 @@ from routers import (
     aisle_layout,
     feedback,
     product,  # Add this import if not already there
-    admin
+    admin,
+    recipe
 )
 
 # Import models for table creation
@@ -100,6 +101,7 @@ app.include_router(aisle_layout.router)
 app.include_router(feedback.router)
 app.include_router(product.router)  # Include the product router here
 app.include_router(admin.router)
+app.include_router(recipe.router)
 
 # Root endpoint
 @app.get("/")
