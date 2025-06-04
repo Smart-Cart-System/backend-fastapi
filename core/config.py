@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     GOOGLE_APPLICATION_CREDENTIALS: Optional[str] = None
 
     # Admin configuration
-    ADMIN_SECRET_KEY: str = os.environ.get("ADMIN_SECRET_KEY", "default_admin_secret_key")
+    ADMIN_SECRET_KEY: Optional[str] = None
 
     class Config:
         env_file = ".env"
