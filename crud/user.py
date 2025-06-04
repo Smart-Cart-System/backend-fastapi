@@ -6,6 +6,8 @@ from schemas.customer_session import SessionDetailsResponse
 from core.security import get_password_hash
 from crud.cart_item import get_cart_items_by_session
 from schemas.cart_item import CartItemResponse, CartItemListResponse
+from fastapi import HTTPException, status
+from core.config import settings
 
 
 def get_user_by_username(db: Session, username: str):
@@ -13,7 +15,18 @@ def get_user_by_username(db: Session, username: str):
 
 def get_user_by_id(db: Session, user_id: int):
     return db.query(User).filter(User.id == user_id).first()  # Use the User class
-def create_user(db: Session, user: UserCreate):
+def create_user(db: Session, user: UserCreate, admin_secret: str = None):
+    # Check if attempting to create an admin user
+    is_admin = user.is_admin
+    
+    # If trying to create admin user, verify admin_secret
+    if is_admin:
+        if admin_secret != settings.ADMIN_SECRET_KEY:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Invalid admin secret key"
+            )
+    
     hashed_password = get_password_hash(user.password)
     db_user = User(
         username=user.username,
@@ -22,7 +35,8 @@ def create_user(db: Session, user: UserCreate):
         mobile_number=user.mobile_number,  
         age=user.age,
         full_name=user.full_name,
-        address=user.address,    
+        address=user.address,
+        is_admin=is_admin 
     )
     db.add(db_user)
     db.commit()

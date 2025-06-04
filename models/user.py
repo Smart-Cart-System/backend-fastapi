@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, Boolean
 from database import Base
 
 class User(Base):
@@ -12,4 +12,4 @@ class User(Base):
     age = Column(Integer, nullable=True)
     address = Column(String(255), nullable=True)
     full_name = Column(String(100), nullable=False)
-    
+    is_admin = Column(Boolean, default=False)

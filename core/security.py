@@ -66,3 +66,14 @@ def verify_pi_api_key(api_key: str = Security(api_key_header)):
             headers={"WWW-Authenticate": "APIKey"},
         )
     return True
+
+def require_admin(current_user: User = Depends(get_current_user)):
+    """
+    Dependency to verify the current user has admin privileges
+    """
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="This operation requires admin privileges"
+        )
+    return current_user

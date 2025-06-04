@@ -5,15 +5,17 @@ class UserBase(BaseModel):
     username: str
     email: EmailStr
     mobile_number: str
-    age: Optional[int] = None  # Use Optional instead of "| None"
+    age: Optional[int] = None
     address: Optional[str] = None
     full_name: str
 
 class UserCreate(UserBase):
     password: str
+    is_admin: bool = False  # Default to regular user
 
 class User(UserBase):
     id: int
+    is_admin: bool = False  # Include is_admin in response
 
     class Config:
         from_attributes = True
