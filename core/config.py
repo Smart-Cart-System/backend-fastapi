@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings
 from typing import Optional
+import os
 
 class Settings(BaseSettings):
     # Database settings
@@ -26,6 +27,9 @@ class Settings(BaseSettings):
 
     # Google Cloud settings
     GOOGLE_APPLICATION_CREDENTIALS: Optional[str] = None
+
+    # Admin configuration
+    ADMIN_SECRET_KEY: str = os.environ.get("ADMIN_SECRET_KEY", "default_admin_secret_key")
 
     class Config:
         env_file = ".env"
