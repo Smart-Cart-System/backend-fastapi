@@ -30,6 +30,9 @@ class Settings(BaseSettings):
 
     # Admin configuration
     ADMIN_SECRET_KEY: Optional[str] = None
+    
+    # OpenAI configuration
+    OPENAI_API_KEY: Optional[str] = None  
 
     class Config:
         env_file = ".env"
