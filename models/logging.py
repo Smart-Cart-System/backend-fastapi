@@ -32,6 +32,8 @@ class SessionEventType(enum.Enum):
     ITEM_ADD = "ITEM_ADD"
     ITEM_REMOVE = "ITEM_REMOVE"
     QR_SCAN = "QR_SCAN"
+    PAYMENT_CREATED = "PAYMENT_CREATED"
+    PAYMENT_SUCCESS = "PAYMENT_SUCCESS"
 
 class SecurityLog(Base):
     __tablename__ = "security_logs"
