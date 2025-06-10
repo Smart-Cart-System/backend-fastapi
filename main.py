@@ -5,6 +5,7 @@ from pydantic import ValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 # Local imports
+from core.db_middleware import DBConnectionMiddleware
 from database import Base, engine
 from core.middleware import add_middlewares
 from core.error_handling import (
@@ -36,7 +37,8 @@ from routers import (
     feedback,
     product,  # Add this import if not already there
     admin,
-    recipe
+    recipe,
+    health  # Add this import to existing routers import list
 )
 
 # Import models for table creation
@@ -80,6 +82,10 @@ app.add_exception_handler(ValidationError, pydantic_validation_exception_handler
 app.add_exception_handler(Exception, generic_exception_handler)
 app.add_exception_handler(StarletteHTTPException, not_found_exception_handler)
 
+# Add this after creating the FastAPI app and before other middleware
+# In the add_middlewares function or directly in main.py if not using that function
+app.add_middleware(DBConnectionMiddleware)
+
 # Include routers
 app.include_router(auth.router)
 app.include_router(customer_session.router)
@@ -102,6 +108,7 @@ app.include_router(feedback.router)
 app.include_router(product.router)  # Include the product router here
 app.include_router(admin.router)
 app.include_router(recipe.router)
+app.include_router(health.router)  # Add this with your other router includes
 
 # Root endpoint
 @app.get("/")
