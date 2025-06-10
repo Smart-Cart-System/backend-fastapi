@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from database import get_db
 from models.user import User
 from core.config import settings
+from services.logging_service import LoggingService, SecurityEventType
 
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -31,8 +32,39 @@ def create_frontend_token(data: dict):
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
 
+def check_admin_permissions(user: User):
+    if not user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to perform this action",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+# Log security events
+def log_security_event(
+    event_type: SecurityEventType,
+    user_id: Optional[int] = None,
+    username: Optional[str] = None,
+    ip_address: str = "unknown",
+    success: bool = False,
+    failure_reason: Optional[str] = None,
+    additional_data: Optional[dict] = None,
+    db: Session = Depends(get_db)
+):
+    logging_service = LoggingService(db)
+    logging_service.log_security_event(
+        event_type=event_type,
+        user_id=user_id,
+        username=username,
+        ip_address=ip_address,
+        success=success,
+        failure_reason=failure_reason,
+        additional_data=additional_data
+    )
+
 # Frontend user authentication
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    logging_service = LoggingService(db)
+    
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Invalid authentication credentials",
@@ -42,29 +74,98 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         username: str = payload.get("sub")
         if username is None:
+            # Log invalid token payload
+            logging_service.log_security_event(
+                event_type=SecurityEventType.UNAUTHORIZED_ACCESS,
+                ip_address="unknown",
+                success=False,
+                failure_reason="Invalid token payload - no username",
+                additional_data={"token_validation": "failed", "reason": "missing_username"}
+            )
             raise credentials_exception
-    except JWTError:
+    except JWTError as e:
+        # Log JWT decode error
+        logging_service.log_security_event(
+            event_type=SecurityEventType.UNAUTHORIZED_ACCESS,
+            ip_address="unknown",
+            success=False,
+            failure_reason=f"JWT decode error: {str(e)}",
+            additional_data={"token_validation": "failed", "error": str(e)}
+        )
         raise credentials_exception
     
     user = db.query(User).filter(User.username == username).first()
     if user is None:
+        # Log user not found during token validation
+        logging_service.log_security_event(
+            event_type=SecurityEventType.UNAUTHORIZED_ACCESS,
+            username=username,
+            ip_address="unknown",
+            success=False,
+            failure_reason="User not found during token validation",
+            additional_data={"token_validation": "failed", "username": username}
+        )
         raise credentials_exception
+    
+    # Log successful token validation
+    logging_service.log_security_event(
+        event_type=SecurityEventType.TOKEN_REFRESH,
+        user_id=user.id,
+        username=username,
+        ip_address="unknown",
+        success=True,
+        additional_data={"token_validation": "success"}
+    )
+    
     return user
 
 # Raspberry Pi authentication
-def verify_pi_api_key(api_key: str = Security(api_key_header)):
+def verify_pi_api_key(api_key: str = Security(api_key_header), db: Session = Depends(get_db)):
+    logging_service = LoggingService(db)
+    
     if api_key is None:
+        # Log missing API key
+        logging_service.log_security_event(
+            event_type=SecurityEventType.UNAUTHORIZED_ACCESS,
+            ip_address="unknown",
+            success=False,
+            failure_reason="API Key header missing",
+            additional_data={"source": "raspberry_pi", "error": "missing_api_key"}
+        )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="API Key header missing",
             headers={"WWW-Authenticate": "APIKey"},
         )
+    
     if api_key != settings.PI_API_KEY:
+        # Log invalid API key
+        logging_service.log_security_event(
+            event_type=SecurityEventType.UNAUTHORIZED_ACCESS,
+            ip_address="unknown",
+            success=False,
+            failure_reason="Invalid API Key",
+            additional_data={
+                "source": "raspberry_pi", 
+                "provided_key": api_key[:10] + "..." if len(api_key) > 10 else api_key,
+                "expected_key_prefix": settings.PI_API_KEY[:10] + "..."
+            }
+        )
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Invalid API Key",
             headers={"WWW-Authenticate": "APIKey"},
         )
+    
+    # Log successful PI authentication
+    logging_service.log_security_event(
+        event_type=SecurityEventType.LOGIN_SUCCESS,
+        username="raspberry_pi",
+        ip_address="unknown",
+        success=True,
+        additional_data={"source": "raspberry_pi", "api_key_validation": "success"}
+    )
+    
     return True
 
 def require_admin(current_user: User = Depends(get_current_user)):

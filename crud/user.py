@@ -6,6 +6,7 @@ from schemas.customer_session import SessionDetailsResponse
 from core.security import get_password_hash
 from crud.cart_item import get_cart_items_by_session
 from schemas.cart_item import CartItemResponse, CartItemListResponse
+from services.logging_service import LoggingService, SecurityEventType
 from fastapi import HTTPException, status
 from core.config import settings
 
@@ -15,7 +16,10 @@ def get_user_by_username(db: Session, username: str):
 
 def get_user_by_id(db: Session, user_id: int):
     return db.query(User).filter(User.id == user_id).first()  # Use the User class
+
 def create_user(db: Session, user: UserCreate, admin_secret: str = None):
+    logging_service = LoggingService(db)
+    
     # Check if attempting to create an admin user
     is_admin = user.is_admin
     
@@ -41,6 +45,17 @@ def create_user(db: Session, user: UserCreate, admin_secret: str = None):
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
+    
+    # Add logging for user creation
+    logging_service.log_security_event(
+        event_type=SecurityEventType.LOGIN_SUCCESS,  # You might want to add USER_CREATED event type
+        user_id=db_user.id,
+        username=user.username,
+        ip_address="system",
+        success=True,
+        additional_data={"action": "user_created", "email": user.email, "full_name": user.full_name}
+    )
+    
     return db_user
 
 def get_user_sessions_with_cart_details(db: Session, user_id: int):
