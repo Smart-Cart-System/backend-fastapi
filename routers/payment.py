@@ -139,7 +139,7 @@ async def payment_webhook(payload: PaymentCallbackResponse,
             payment.transaction_status = PaymentStatusEnum.successful
             payment.transaction_id = payload.transaction_id
             await notify_clients(payment.session_id, "Payment successful", 0)
-            finish_session(db, payment.session_id)
+            await finish_session(db, payment.session_id)
         elif status == "failed":
             if payment.retry_attempts < 3:
                 payment.transaction_status = PaymentStatusEnum.failed
