@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 from services.websocket_service import notify_clients, notify_hardware_clients
 import os
 import json
-from services.logging_service import LoggingService, get_logging_service
+from services.logging_service import LoggingService, get_logging_service, SessionEventType
 
 
 # Load environment variables from .env file
@@ -90,7 +90,7 @@ async def create_payment(session_id: int,
 
     # Log the successful creation of the payment
     logging_service.log_session_activity(
-        message=f"Payment created successfully for session {session_id} with payment ID {payment_id}",
+        event_type=SessionEventType.PAYMENT_CREATED,
         user_id=user.id,
         session_id=session_id,
         additional_data={
