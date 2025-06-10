@@ -11,6 +11,7 @@ from services.websocket_service import notify_hardware_clients
 from core.security import oauth2_scheme
 from routers.sse import send_authenticated_message
 from schemas.sse import SSEAuthMessage
+from services.logging_service import LoggingService, SessionEventType, SecurityEventType, get_logging_service
 
 
 router = APIRouter(
@@ -27,37 +28,37 @@ def get_qr(cart_id: int, db: Session = Depends(get_db)):
     return customer_session.generate_qr(cart_id)
 
 @router.post("/scan-qr", response_model=Session)
-async def scan_qr_code(scan_data: QRScanRequest, db: Session = Depends(get_db), 
+async def scan_qr_code(scan_data: QRScanRequest, 
+                       db: Session = Depends(get_db), 
                        current_user: User = Depends(get_current_user), 
-                       token: str = Depends(oauth2_scheme)):
-    try:
-        cart_id = customer_session.validate_qr_token(scan_data.token)
-        if not cart_id:
-            raise HTTPException(status_code=401, detail="Invalid or expired QR code.")
+                       token: str = Depends(oauth2_scheme),
+                       logging_service: LoggingService = Depends(get_logging_service)):
+    
+    cart_id = customer_session.validate_qr_token(scan_data.token, db)
+    if not cart_id:
+        raise HTTPException(status_code=401, detail="Invalid or expired QR code.")
+    new_session, error = await customer_session.create_session_from_qr(
+        db, cart_id, current_user.id, token)
         
-        new_session, error = await customer_session.create_session_from_qr(
-            db, cart_id, current_user.id, token)
-            
-        if error:
-            raise HTTPException(status_code=400, detail=error)
-            
-        # Handle SSE notification here (API-specific)
-        await send_authenticated_message(
-            cart_id=new_session.cart_id,
-            auth_message=SSEAuthMessage(
-                session_id=new_session.session_id,
-                token=token,
-                event_type="session-started"
-            )
+    if error:
+        raise HTTPException(status_code=400, detail=error)
+        
+    # Session creation logging happens in crud/customer_session.py
+    
+    await send_authenticated_message(
+        cart_id=new_session.cart_id,
+        auth_message=SSEAuthMessage(
+            session_id=new_session.session_id,
+            token=token,
+            event_type="session-started"
         )
-        notify_hardware_clients(
-            cart_id=new_session.cart_id,
-            command="session_started",
-            session_id=new_session.session_id
-        )
-        return new_session
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid cart ID format")
+    )
+    await notify_hardware_clients(
+        cart_id=new_session.cart_id,
+        command="session_started",
+        session_id=new_session.session_id
+    )
+    return new_session
 
 @router.get("/cart/{cart_id}", response_model=Session)
 def get_session_by_cart(cart_id: int, db: Session = Depends(get_db), pi_authenticated: bool = Depends(verify_pi_api_key)):

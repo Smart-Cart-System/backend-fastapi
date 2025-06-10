@@ -40,6 +40,7 @@ from routers import (
     recipe,
     health  # Add this import to existing routers import list
 )
+from middleware.logging_middleware import LoggingMiddleware
 
 # Import models for table creation
 import models.user
@@ -73,6 +74,9 @@ app = FastAPI(
 
 # Add middlewares from the middleware module
 app = add_middlewares(app)
+
+# Add logging middleware
+app.add_middleware(LoggingMiddleware)
 
 # Add exception handlers
 app.add_exception_handler(RequestValidationError, validation_exception_handler)

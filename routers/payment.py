@@ -8,10 +8,11 @@ from crud.user import get_user_by_id
 from database import get_db
 from models.payment import PaymentStatusEnum
 from dotenv import load_dotenv
-from services.websocket_service import notify_clients
+from services.websocket_service import notify_clients, notify_hardware_clients
 import os
 import json
-import logging
+from services.logging_service import LoggingService, get_logging_service
+
 
 # Load environment variables from .env file
 load_dotenv()
@@ -21,12 +22,11 @@ router = APIRouter(
     tags=["payment"]
 )
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 @router.post("/create-payment/{session_id}")
-async def create_payment(session_id: int, db: Session = Depends(get_db)):
+async def create_payment(session_id: int, 
+                         db: Session = Depends(get_db),
+                         logging_service: LoggingService = Depends(get_logging_service)):
     # Fetch session details
     session = get_session(db, session_id)
     if not session:
@@ -66,19 +66,49 @@ async def create_payment(session_id: int, db: Session = Depends(get_db)):
     try:
         online_payment_response = await create_online_payment(payment_data)
     except Exception as e:
-        logger.error(f"Error creating online payment: {e}")
+        logging_service.log_error(
+            error_type=type(e).__name__,
+            error_message=str(e),
+            severity="HIGH",
+            endpoint="/payment/create-payment",
+            additional_data={"session_id": session_id}
+        )
         raise HTTPException(status_code=500, detail="Failed to create online payment")
     
     # Create a payment record in the database
     try:
         payment_id = create_payment_record(db, payment_data, online_payment_response, session_id, total_price)
     except Exception as e:
-        logger.error(f"Error creating payment record: {e}")
+        logging_service.log_error(
+            error_type=type(e).__name__,
+            error_message=str(e),
+            severity="HIGH",
+            endpoint="/payment/create-payment",
+            additional_data={"session_id": session_id}
+        )
         raise HTTPException(status_code=500, detail="Failed to create payment record")
-    
+
     # Log the successful creation of the payment
-    logger.info(f"Payment created successfully for session {session_id} with payment ID {payment_id}")
-    
+    logging_service.log_session_activity(
+        message=f"Payment created successfully for session {session_id} with payment ID {payment_id}",
+        user_id=user.id,
+        session_id=session_id,
+        additional_data={
+            "payment_id": payment_id,
+            "total_amount": total_price,
+            "payment_url": online_payment_response.data.payment_url
+        }
+    )
+    await notify_hardware_clients(
+        cart_id=session.cart_id,
+        command="payment_created",
+        session_id=session_id
+    )
+    # Notify clients about the new payment
+    a = await notify_clients(session_id, "Payment created", 0)
+    print(f"Notification sent: {a}")
+    # Return a success response
+
     return HTTPException(status_code=201, detail="Payment created successfully")
 
 
@@ -91,15 +121,15 @@ def get_payment(session_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/webhook", response_model=PaymentCallbackResponse)
-async def payment_webhook(payload: PaymentCallbackResponse, db: Session = Depends(get_db)):
+async def payment_webhook(payload: PaymentCallbackResponse,
+                           db: Session = Depends(get_db),
+                           logging_service: LoggingService = Depends(get_logging_service)):
     # Check if the transaction ID exists in the payments table
     payment = get_payment_by_payment_id(db, payload.payment_id)
     if not payment:
         raise HTTPException(status_code=404, detail="Transaction ID not found")
 
     # Log the received webhook payload
-    logger.info(f"Received webhook payload: {payload}")
-
     # Process payment based on response
     try:
         status = payload.transaction_status.lower()
@@ -119,14 +149,23 @@ async def payment_webhook(payload: PaymentCallbackResponse, db: Session = Depend
                 payment.transaction_status = PaymentStatusEnum.failed
                 await notify_clients(payment.session_id, "Payment failed", 0)
         else:
-            logger.warning(f"Unknown transaction status: {status}")
-
+            logging_service.log_warning(
+                message=f"Unknown transaction status: {status}",
+                user_id=None,
+                session_id=payment.session_id
+            )
         payment.updated_at = payload.updated_at or payment.updated_at
         db.commit()
         db.refresh(payment)
 
     except Exception as e:
-        logger.error(f"Error processing payment webhook: {e}")
+        logging_service.log_error(
+            error_type=type(e).__name__,
+            error_message=str(e),
+            severity="HIGH",
+            endpoint="/payment/webhook",
+            additional_data={"payment_id": payment.payment_id}
+        )
         raise HTTPException(status_code=500, detail="Internal server error")
 
     # Convert the Payment object to a PaymentCallbackResponse model

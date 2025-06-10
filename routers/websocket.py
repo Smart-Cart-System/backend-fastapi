@@ -33,48 +33,31 @@ async def websocket_endpoint(websocket: WebSocket, session_id: int, db: Session 
         except WebSocketDisconnect:
             await remove_client(session_id)
  
-@router.websocket("/cart")
-async def websocket_cart_endpoint(websocket: WebSocket):
+@router.websocket("/hardware/{cart_id}")
+async def websocket_cart_endpoint(websocket: WebSocket, cart_id: int, db: Session = Depends(get_db)):
     await websocket.accept()
-    cart_id = None
     
-    # Receive the initial message containing the cart_id
     try:
-        data = await websocket.receive_json()
-        cart_id = data.get("cart_id")
-        
-        if not cart_id:
-            await websocket.send_json({"error": "No cart_id provided"})
-            await websocket.close()
-            return
-            
-        # Get cart and validate
-        cart = get_cart_by_id(cart_id)
+        # Validate cart exists before processing
+        cart = get_cart_by_id(db, cart_id)
         if not cart:
-            await websocket.send_json({"error": "Invalid cart_id"})
+            await websocket.send_json({"error": "Cart not found"})
             await websocket.close()
             return
             
-        # Store connection in service layer
+        # Register hardware connection
         await register_hardware_client(cart_id, websocket)
-        await websocket.send_json({"status": "connected", "message": "Cart connection established"})
+        await websocket.send_json({"status": "connected", "message": "Hardware connection established"})
         
-        # Keep connection open and handle status updates
+        # Keep connection alive
         while True:
+            # Process incoming messages
             data = await websocket.receive_json()
-            cart_id = data.get("cart_id")
-            status = data.get("status")
-            ip = data.get("ip")
+            # Add any message handling logic here if needed
             
-            if status == "online" and cart_id:
-                # Refresh the connection in our service
-                await register_hardware_client(cart_id, websocket)
-                logging.info(f"Cart {cart_id} status: online, IP: {ip}")
-        
     except WebSocketDisconnect:
-        if cart_id:
-            logging.info(f"Cart {cart_id} disconnected")
-            await remove_hardware_client(cart_id)
+        logging.info(f"Cart {cart_id} disconnected")
+        await remove_hardware_client(cart_id)
     except Exception as e:
-        logging.error(f"Error in cart websocket: {e}")
+        logging.error(f"WebSocket error: {str(e)}")
         await websocket.close()
