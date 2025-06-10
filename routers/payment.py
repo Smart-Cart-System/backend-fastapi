@@ -95,8 +95,7 @@ async def create_payment(session_id: int,
         session_id=session_id,
         additional_data={
             "payment_id": payment_id,
-            "total_amount": total_price,
-            "payment_url": online_payment_response.data.payment_url
+            "total_amount": total_price
         }
     )
     await notify_hardware_clients(
