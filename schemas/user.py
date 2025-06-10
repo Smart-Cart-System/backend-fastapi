@@ -13,7 +13,7 @@ class UserCreate(UserBase):
     password: str
     is_admin: bool = False  # Default to regular user
 
-class User(UserBase):
+class UserOut(UserBase):
     id: int
     is_admin: bool = False  # Include is_admin in response
 

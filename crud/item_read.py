@@ -3,6 +3,7 @@ from models.item_read import ItemRead
 from models.cart_item import CartItem
 from models.customer_session import CustomerSession
 from models.product import ProductionData
+from services.logging_service import LoggingService, SessionEventType,get_logging_service
 
 def validate_session(db: Session, session_id: int):
     """Check if session exists and is active"""
@@ -31,9 +32,19 @@ def read_item(db: Session, session_id: int, barcode: int):
     db.add(item_read)
     db.commit()
     db.refresh(item_read)
-    
+
+    logging_service = get_logging_service(db)
+    logging_service.log_session_activity(
+        event_type=SessionEventType.ITEM_READ,
+        user_id=session.user_id,
+        session_id=session_id,
+        cart_id=session.cart_id,
+        barcode=barcode,
+        additional_data={"item_no": product.item_no_}
+    )
+
     return product, None  # Return product and no error
-    
+
 def get_product_by_barcode(db: Session, barcode: int):
     """Get product details by barcode"""
     return db.query(ProductionData).filter(ProductionData.barcode == barcode).first()
