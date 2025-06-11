@@ -13,6 +13,7 @@ from datetime import datetime, timezone, timedelta
 from services.websocket_service import notify_hardware_clients
 from services.logging_service import SecurityEventType, LoggingService, get_logging_service 
 from core.config import settings
+from models.session_location import SessionLocation
 
 def create_session(db: Session, session: SessionCreate):
     logging_service = get_logging_service(db)
@@ -31,6 +32,16 @@ def create_session(db: Session, session: SessionCreate):
     db.add(db_session)
     db.commit()
     db.refresh(db_session)
+    
+    # Create default location entry for aisle 1
+    default_location = SessionLocation(
+        session_id=db_session.session_id,
+        aisle_id=1  # Set default aisle to 1
+    )
+    
+    # Add the default location
+    db.add(default_location)
+    db.commit()
     
     # Log session start
     logging_service.log_session_activity(
@@ -119,7 +130,7 @@ async def finish_session(db: Session, session_id: int):
 
 def generate_qr(data: str) -> BytesIO:
     """Generates a QR code Token and returns it"""
-    expires_at = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    expires_at = datetime.now(timezone.utc) + timedelta(minutes=settings.QR_EXPIRATION_MINUTES)
     payload = {
         "cartid": data,
         "exp": expires_at

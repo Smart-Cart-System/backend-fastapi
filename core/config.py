@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     FRONTEND_TOKEN_EXPIRE_HOURS: int = 6
     
     # QR Code Settings
-    EXPIRATION_MINUTES: int = 1
+    QR_EXPIRATION_MINUTES: int = 1
     
     # Pi Authentication
     PI_API_KEY: str = "PI_SECRET_KEY_CHANGE_THIS_IN_PRODUCTION"
