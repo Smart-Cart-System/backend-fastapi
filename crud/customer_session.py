@@ -119,7 +119,7 @@ async def finish_session(db: Session, session_id: int):
 
 def generate_qr(data: str) -> BytesIO:
     """Generates a QR code Token and returns it"""
-    expires_at = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    expires_at = datetime.now(timezone.utc) + timedelta(minutes=settings.QR_EXPIRATION_MINUTES)
     payload = {
         "cartid": data,
         "exp": expires_at
