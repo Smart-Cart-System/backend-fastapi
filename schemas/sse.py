@@ -11,13 +11,3 @@ class SSEAuthMessage(BaseModel):
     session_id: int
     token: str  # Bearer token
     event_type: str
-
-class CheckoutEvent(BaseModel):
-    """Schema for checkout completed event"""
-    session_id: int
-    token: str
-    receipt_id: str
-    total_amount: float
-    items_count: int
-
-# You can add more event schemas as needed

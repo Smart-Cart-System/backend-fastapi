@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from schemas.payment import PaymentRequest, Amount, PaymentAPIResponse, PaymentCallbackResponse
 from crud.payment import create_online_payment, create_payment_record, get_payment_by_session_id, get_payment_by_payment_id
 from crud.customer_session import get_session, finish_session
-from crud.cart_item import get_cart_items_by_session
+from crud.cart_item import get_cart_items_by_session, validate_session
 from crud.user import get_user_by_id
 from database import get_db
 from models.payment import PaymentStatusEnum
@@ -25,12 +25,12 @@ router = APIRouter(
 
 @router.post("/create-payment/{session_id}")
 async def create_payment(session_id: int, 
-                         db: Session = Depends(get_db),
-                         logging_service: LoggingService = Depends(get_logging_service)):
+                         db: Session = Depends(get_db)):
     # Fetch session details
-    session = get_session(db, session_id)
+    logging_service = get_logging_service(db)
+    session = validate_session(db, session_id)
     if not session:
-        raise HTTPException(status_code=404, detail="Session not found")
+        raise HTTPException(status_code=404, detail="Session not found or inactive")
 
     # Fetch cart items and calculate total amount
     cart_items, total_price = get_cart_items_by_session(db, session_id)
@@ -93,8 +93,9 @@ async def create_payment(session_id: int,
         event_type=SessionEventType.PAYMENT_CREATED,
         user_id=user.id,
         session_id=session_id,
+        cart_id=session.cart_id,
         additional_data={
-            "payment_id": payment_id,
+            "payment_id": payment_id.payment_id,
             "total_amount": total_price
         }
     )

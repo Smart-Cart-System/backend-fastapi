@@ -4,9 +4,9 @@ from models.customer_session import CustomerSession
 from schemas.user import UserCreate
 from schemas.customer_session import SessionDetailsResponse
 from core.security import get_password_hash
-from crud.cart_item import get_cart_items_by_session
+from crud.cart_item import get_cart_items_by_session, get_sessions_summary
 from schemas.cart_item import CartItemResponse, CartItemListResponse
-from services.logging_service import LoggingService, SecurityEventType
+from services.logging_service import LoggingService, SecurityEventType, get_logging_service
 from fastapi import HTTPException, status
 from core.config import settings
 
@@ -18,7 +18,7 @@ def get_user_by_id(db: Session, user_id: int):
     return db.query(User).filter(User.id == user_id).first()  # Use the User class
 
 def create_user(db: Session, user: UserCreate, admin_secret: str = None):
-    logging_service = LoggingService(db)
+    logging_service = get_logging_service(db)
     
     # Check if attempting to create an admin user
     is_admin = user.is_admin
@@ -60,17 +60,21 @@ def create_user(db: Session, user: UserCreate, admin_secret: str = None):
 
 def get_user_sessions_with_cart_details(db: Session, user_id: int):
     """Fetch all sessions for a user and include cart details"""
-    sessions = db.query(CustomerSession).filter(CustomerSession.user_id == user_id).all()
+    sessions = db.query(CustomerSession).filter(
+        CustomerSession.user_id == user_id,
+        CustomerSession.is_active == False
+    ).order_by(CustomerSession.created_at.desc()).all()
+    
     if not sessions:
         return []
 
     session_responses = []
     for session in sessions:
         sessionId = session.session_id
-        items, total_amount = get_cart_items_by_session(db, sessionId)
+        items, total_amount = get_sessions_summary(db, sessionId)
         item_responses = []
         for item in items:
-            product_info = item.product  # Using the relationship
+            product_info = item.product
             item_responses.append(CartItemResponse(
                 session_id=item.session_id,
                 item_id=item.item_id,
