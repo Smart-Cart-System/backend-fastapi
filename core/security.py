@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from database import get_db
 from models.user import User
 from core.config import settings
-from services.logging_service import LoggingService, SecurityEventType
+from services.logging_service import LoggingService, SecurityEventType, get_logging_service
 
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -39,31 +39,9 @@ def check_admin_permissions(user: User):
             detail="You do not have permission to perform this action",
             headers={"WWW-Authenticate": "Bearer"},
         )
-# Log security events
-def log_security_event(
-    event_type: SecurityEventType,
-    user_id: Optional[int] = None,
-    username: Optional[str] = None,
-    ip_address: str = "unknown",
-    success: bool = False,
-    failure_reason: Optional[str] = None,
-    additional_data: Optional[dict] = None,
-    db: Session = Depends(get_db)
-):
-    logging_service = LoggingService(db)
-    logging_service.log_security_event(
-        event_type=event_type,
-        user_id=user_id,
-        username=username,
-        ip_address=ip_address,
-        success=success,
-        failure_reason=failure_reason,
-        additional_data=additional_data
-    )
-
 # Frontend user authentication
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
-    logging_service = LoggingService(db)
+    logging_service = get_logging_service(db)
     
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -121,7 +99,7 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
 
 # Raspberry Pi authentication
 def verify_pi_api_key(api_key: str = Security(api_key_header), db: Session = Depends(get_db)):
-    logging_service = LoggingService(db)
+    logging_service = get_logging_service(db)
     
     if api_key is None:
         # Log missing API key

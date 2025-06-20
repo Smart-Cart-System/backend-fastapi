@@ -3,7 +3,7 @@ from models.cart_item import CartItem
 from models.customer_session import CustomerSession
 from models.product import ProductionData
 from typing import List, Tuple, Dict, Union, Any
-from services.logging_service import LoggingService, SessionEventType
+from services.logging_service import LoggingService, SessionEventType, get_logging_service
 
 def validate_session(db: Session, session_id: int):
     """Check if session exists and is active"""
@@ -14,7 +14,7 @@ def validate_session(db: Session, session_id: int):
 
 def add_cart_item(db: Session, session_id: int, barcode: int, weight: float = None):
     """Add item to cart or increment quantity"""
-    logging_service = LoggingService(db)
+    logging_service = get_logging_service(db)
     
     # Validate session
     session = validate_session(db, session_id)
@@ -108,7 +108,7 @@ def add_cart_item(db: Session, session_id: int, barcode: int, weight: float = No
 
 def remove_cart_item(db: Session, session_id: int, barcode: int):
     """Remove item from cart or decrement quantity"""
-    logging_service = LoggingService(db)
+    logging_service = get_logging_service(db)
     
     # Validate session
     session = validate_session(db, session_id)
@@ -207,6 +207,24 @@ def get_cart_items_by_session(db: Session, session_id: int) -> Tuple[List[CartIt
         CartItem.session_id == session_id
     ).all()
     
+    # Calculate total
+    total_price = 0
+    for item in items:
+        if hasattr(item, 'product') and item.product:
+            total_price += item.product.unit_price * item.quantity
+    
+    return items, total_price
+
+def get_sessions_summary(db: Session, session_id: int) -> Tuple[List[CartItem], float]:
+    """Get all items in a session with total price calculation"""
+    session = db.query(CustomerSession).filter(
+        CustomerSession.session_id == session_id).first()
+    if not session:
+        return [], 0
+    # Get all items with eager loading of products
+    items = db.query(CartItem).filter(
+        CartItem.session_id == session_id
+    ).all()
     # Calculate total
     total_price = 0
     for item in items:
