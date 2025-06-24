@@ -101,3 +101,33 @@ def get_user_sessions_with_cart_details(db: Session, user_id: int):
         session_responses.append(cartItems)
 
     return session_responses
+
+def update_user(db: Session, user_id: int, user_data: UserCreate):
+    db_user = get_user_by_id(db, user_id)
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Update fields
+    db_user.username = user_data.username
+    db_user.email = user_data.email
+    db_user.mobile_number = user_data.mobile_number
+    db_user.age = user_data.age
+    db_user.full_name = user_data.full_name
+    db_user.address = user_data.address
+    
+    db.commit()
+    db.refresh(db_user)
+    
+    return db_user
+
+def update_user_password(db: Session, user_id: int, new_password: str):
+    db_user = get_user_by_id(db, user_id)
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    db_user.hashed_password = get_password_hash(new_password)
+    
+    db.commit()
+    db.refresh(db_user)
+    
+    return db_user
