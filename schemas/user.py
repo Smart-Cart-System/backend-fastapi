@@ -19,3 +19,10 @@ class UserOut(UserBase):
 
     class Config:
         from_attributes = True
+
+        from pydantic import BaseModel
+
+class PasswordUpdateForm(BaseModel):
+    username: str
+    password: str
+    new_password: str
