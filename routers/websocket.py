@@ -1,14 +1,19 @@
+from modulefinder import test
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends
 import logging
 from crud import cart_item
 from crud.cart import get_cart_by_id
 from sqlalchemy.orm import Session
 from database import get_db
+from core.security import get_current_user
+from models.user import User
+from crud.customer_session import get_active_session_by_user
 from services.websocket_service import (
     register_client, 
     register_hardware_client, 
     remove_client, 
-    remove_hardware_client
+    remove_hardware_client,
+    echo as echo_service,
 )
 
 router = APIRouter(
@@ -61,3 +66,12 @@ async def websocket_cart_endpoint(websocket: WebSocket, cart_id: int, db: Sessio
     except Exception as e:
         logging.error(f"WebSocket error: {str(e)}")
         await websocket.close()
+
+@router.post("/echo")
+async def echo_hardware_message(message: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    # Here you can add logic to process the echo message
+    logging.info(f"Echoing message from user {current_user.id}: {message}")
+    user = get_active_session_by_user(db,current_user.id)
+    if await echo_service(user.session_id, message):
+        return {"status": "success"}
+    return {"status": "error"}

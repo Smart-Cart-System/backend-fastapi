@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from models.user import User  # Import the class, not the module
 from models.customer_session import CustomerSession
-from schemas.user import UserCreate
+from schemas.user import UserCreate, UserUpdate
 from schemas.customer_session import SessionDetailsResponse
 from core.security import get_password_hash
 from crud.cart_item import get_cart_items_by_session, get_sessions_summary
@@ -102,18 +102,16 @@ def get_user_sessions_with_cart_details(db: Session, user_id: int):
 
     return session_responses
 
-def update_user(db: Session, user_id: int, user_data: UserCreate):
+def update_user(db: Session, user_id: int, user_data: UserUpdate):
     db_user = get_user_by_id(db, user_id)
     if not db_user:
         raise HTTPException(status_code=404, detail="User not found")
     
     # Update fields
-    db_user.username = user_data.username
-    db_user.email = user_data.email
-    db_user.mobile_number = user_data.mobile_number
-    db_user.age = user_data.age
-    db_user.full_name = user_data.full_name
-    db_user.address = user_data.address
+    update_data = user_data.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        if hasattr(db_user, field):
+            setattr(db_user, field, value)
     
     db.commit()
     db.refresh(db_user)
