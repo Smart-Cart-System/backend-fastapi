@@ -8,10 +8,10 @@ from core.config import settings
 
 class EmailService:
     def __init__(self):
-        self.smtp_server = "mail.duckycart.me"
-        self.smtp_port = 587
-        self.email_address = "noreply@duckycart.me"
-        self.email_password = "noreply123"
+        self.smtp_server = settings.SMTP_SERVER      # Will raise error if not in .env
+        self.smtp_port = settings.SMTP_PORT          # Will raise error if not in .env  
+        self.email_address = settings.EMAIL_ADDRESS  # Will raise error if not in .env
+        self.email_password = settings.EMAIL_PASSWORD # Will raise error if not in .env
     
     def _generate_cart_html(self, cart_data: CartItemListResponse, user_name: str = "Customer") -> str:
         """Generate HTML content from CartItemListResponse"""
