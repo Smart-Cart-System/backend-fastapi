@@ -37,6 +37,13 @@ class Settings(BaseSettings):
     # OpenAI configuration
     OPENAI_API_KEY: Optional[str] = None  
 
+    SMTP_SERVER: Optional[str] = None
+    SMTP_PORT: Optional[int] = None
+    EMAIL_ADDRESS: Optional[str] = None
+    EMAIL_PASSWORD: Optional[str] = None
+
+
+
     class Config:
         env_file = ".env"
         case_sensitive = True
