@@ -24,12 +24,23 @@ async def remove_hardware_client(cart_id: int) -> None:
 
 async def notify_clients(session_id: int, message_type: str, barcode: int) -> bool:
     """Send message to session clients"""
-    print(cart_clients)
     if session_id in cart_clients:
         client = cart_clients[session_id]
         try:
             logging.info(f"Sending message to session {session_id}: {message_type}")
             await client.send_json({"type": message_type, "data": barcode})
+            return True
+        except Exception as e:
+            logging.error(f"Failed to send message: {e}")
+    return False
+
+async def echo(session_id: int, message: str) -> bool:
+    """Send echo to session clients"""
+    if session_id in cart_clients:
+        client = cart_clients[session_id]
+        try:
+            logging.info(f"Sending message to session {session_id}: {message}")
+            await client.send_json({"message": message})
             return True
         except Exception as e:
             logging.error(f"Failed to send message: {e}")

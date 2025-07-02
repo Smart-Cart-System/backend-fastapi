@@ -26,3 +26,11 @@ class PasswordUpdateForm(BaseModel):
     username: str
     password: str
     new_password: str
+
+class UserUpdate(BaseModel):
+    username: Optional[str] = None
+    email: Optional[EmailStr] = None
+    mobile_number: Optional[str] = None
+    age: Optional[int] = None
+    address: Optional[str] = None
+    full_name: Optional[str] = None
