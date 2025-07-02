@@ -6,7 +6,7 @@ from database import get_db
 from core.security import create_frontend_token, verify_password, check_admin_permissions, get_current_user
 from models.user import User
 from crud import user as user_crud
-from schemas.user import UserOut, UserCreate, UserBase, PasswordUpdateForm
+from schemas.user import UserOut, UserCreate, UserBase, PasswordUpdateForm, UserUpdate
 from services.logging_service import LoggingService, SecurityEventType, get_logging_service
 from core.config import settings
 from typing import Optional
@@ -103,7 +103,7 @@ def login(request: Request,
 
 @router.put("/update-data", response_model=UserOut)
 def update_user_data(
-    user: UserBase, 
+    user: UserUpdate, 
     db: Session = Depends(get_db), 
     current_user: User = Depends(get_current_user)
 ):

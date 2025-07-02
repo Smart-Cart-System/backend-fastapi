@@ -8,6 +8,9 @@ from crud import item_read, cart_item
 from typing import List, Dict
 from services.websocket_service import notify_clients
 
+
+
+
 router = APIRouter(
     prefix="/cart-items",
     tags=["cart items"]
@@ -121,3 +124,4 @@ def get_cart_items_by_session(session_id: int, db: Session = Depends(get_db),cur
         total_price=total,
         item_count=len(items)
     )
+

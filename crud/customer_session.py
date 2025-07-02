@@ -6,6 +6,7 @@ from schemas.customer_session import SessionCreate, SessionUpdate
 from io import BytesIO
 import qrcode
 import jwt
+from schemas.cart_item import CartItemResponse, CartItemListResponse
 from crud.cart import get_cart_by_id
 from crud.cart_item import get_cart_items_by_session
 from services.logging_service import LoggingService, SessionEventType
@@ -14,6 +15,8 @@ from services.websocket_service import notify_hardware_clients
 from services.logging_service import SecurityEventType, LoggingService, get_logging_service 
 from core.config import settings
 from models.session_location import SessionLocation
+from services.email_service import send_cart_receipt_email
+from models.user import User
 
 def create_session(db: Session, session: SessionCreate):
     logging_service = get_logging_service(db)
@@ -124,6 +127,39 @@ async def finish_session(db: Session, session_id: int):
         command="end_session",
         session_id=session_id
     )
+
+    item_responses = []
+    for item in items:
+        product_info = item.product
+        item_responses.append(CartItemResponse(
+            session_id=item.session_id,
+            item_id=item.item_id,
+            quantity=item.quantity,
+            saved_weight=item.saved_weight,
+            product={
+                "item_no_": product_info.item_no_,
+                "description": product_info.description,
+                "description_ar": product_info.description_ar,
+                "unit_price": product_info.unit_price,
+                "product_size": product_info.product_size,
+                "barcode": product_info.barcode,
+                "image_url": product_info.image_url
+            } if product_info else None
+        ))
+    print(item_responses)
+    cart_data = CartItemListResponse(
+        items=item_responses,
+        total_price=total_price,
+        item_count=len(items)
+    )
+    user = db.query(User).filter(User.id == session.user_id).first()
+    # Send email
+    if user.email:
+        send_cart_receipt_email(
+            recipient_email=user.email,
+            cart_data=cart_data,
+            user_name=user.full_name if user else "Valued Customer"
+        )
     return True
 
 
