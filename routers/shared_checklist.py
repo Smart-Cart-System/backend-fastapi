@@ -36,7 +36,11 @@ def create_share_link(
         "checklist_id": shared.checklist_id,
         "share_token": shared.share_token,
         "shareable_url": shareable_url,
-        "created_at": shared.created_at
+        "created_at": shared.created_at,
+        "created_by": {
+            "id": current_user.id,  # Assuming current_user has an id attribute     
+            "username": current_user.username  # Assuming current_user has a username attribute
+            }
     }
 
 @router.get("/checklist/{checklist_id}", response_model=Dict)

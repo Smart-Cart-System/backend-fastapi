@@ -25,8 +25,18 @@ def process_image_with_ocr(image_content: bytes) -> List[str]:
         temp_image_path = temp_image.name
     
     try:
-        # Initialize the Vision API client
-        client = vision.ImageAnnotatorClient()
+        # Get credentials path from environment variable or use hardcoded path as fallback
+        credentials_path = os.environ.get(
+            "GOOGLE_APPLICATION_CREDENTIALS", 
+            "/home/smartcart/backend-fastapi/google_ocr.json"
+        )
+        
+        # Debug logging to help diagnose the issue
+        print(f"Looking for credentials file at: {credentials_path}")
+        print(f"File exists: {os.path.exists(credentials_path)}")
+        
+        # Explicitly initialize the client with the credentials file
+        client = vision.ImageAnnotatorClient.from_service_account_json(credentials_path)
         
         # Create an image object
         image = vision.Image(content=image_content)
