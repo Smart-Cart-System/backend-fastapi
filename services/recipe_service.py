@@ -3,7 +3,7 @@ import os
 from typing import List, Dict, Any
 from sqlalchemy.orm import Session
 from models.recipe import Recipe
-from crud.cart_item import get_cart_items_by_session
+from crud.cart_item import get_cart_items_for_recipe  # Use this instead of get_cart_items_by_session
 import logging
 from openai import AsyncOpenAI
 
@@ -17,8 +17,8 @@ async def generate_recipe_from_items(db: Session, session_id: int) -> Dict[str, 
     """
     Generate a recipe based on items purchased in a session using ChatGPT
     """
-    # Get cart items from the session
-    items, _ = get_cart_items_by_session(db, session_id)
+    # Get cart items from the session - using the function that works with inactive sessions
+    items, _ = get_cart_items_for_recipe(db, session_id)
     
     if not items or len(items) == 0:
         return {"error": "No items found in this session"}
