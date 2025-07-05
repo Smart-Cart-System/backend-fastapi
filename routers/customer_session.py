@@ -21,10 +21,12 @@ router = APIRouter(
 
 
 @router.get("/qr/{cart_id}")
-def get_qr(cart_id: int, db: Session = Depends(get_db)):
+async def get_qr(cart_id: int, db: Session = Depends(get_db)):
     db_cart = cart.get_cart_by_id(db, cart_id)
     if not db_cart:
         raise HTTPException(status_code=404, detail="Cart not found")
+    
+    await notify_hardware_clients(cart_id, "generate_qr", None)
     return customer_session.generate_qr(cart_id)
 
 @router.post("/scan-qr", response_model=Session)
