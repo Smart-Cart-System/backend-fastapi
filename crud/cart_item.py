@@ -232,3 +232,29 @@ def get_sessions_summary(db: Session, session_id: int) -> Tuple[List[CartItem], 
             total_price += item.product.unit_price * item.quantity
     
     return items, total_price
+
+def get_cart_items_for_recipe(db: Session, session_id: int) -> Tuple[List[CartItem], float]:
+    """
+    Get all items in a session for recipe generation regardless of session status.
+    This allows recipe generation for completed (inactive) sessions.
+    """
+    # Check if session exists (without checking is_active)
+    session = db.query(CustomerSession).filter(
+        CustomerSession.session_id == session_id
+    ).first()
+    
+    if not session:
+        return [], 0
+    
+    # Get all items with eager loading of products
+    items = db.query(CartItem).filter(
+        CartItem.session_id == session_id
+    ).all()
+    
+    # Calculate total
+    total_price = 0
+    for item in items:
+        if hasattr(item, 'product') and item.product:
+            total_price += item.product.unit_price * item.quantity
+    
+    return items, total_price
