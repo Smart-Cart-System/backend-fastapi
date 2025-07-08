@@ -8,12 +8,14 @@ from database import get_db
 from core.security import get_current_user
 from models.user import User
 from crud.customer_session import get_active_session_by_user
+from core.security import verify_pi_api_key
 from services.websocket_service import (
     register_client, 
     register_hardware_client, 
     remove_client, 
     remove_hardware_client,
     echo as echo_service,
+    echo_hardware_clients as echo_hardware_service
 )
 
 router = APIRouter(
@@ -73,5 +75,12 @@ async def echo_hardware_message(message: str, current_user: User = Depends(get_c
     logging.info(f"Echoing message from user {current_user.id}: {message}")
     user = get_active_session_by_user(db,current_user.id)
     if await echo_service(user.session_id, message):
+        return {"status": "success"}
+    return {"status": "error"}
+
+@router.post("/echo/hardware/{cart_id}")
+async def echo_hardware_message(cart_id: int, message: str, db: Session = Depends(get_db)):
+    logging.info(f"Echoing hardware message from user {cart_id}: {message}")
+    if await echo_hardware_service(cart_id, message):
         return {"status": "success"}
     return {"status": "error"}
