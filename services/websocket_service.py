@@ -57,3 +57,15 @@ async def notify_hardware_clients(cart_id: int, command: str, session_id: int) -
         except Exception as e:
             logging.error(f"Failed to send message to hardware client: {e}")
     return False
+
+async def echo_hardware_clients(cart_id: int, message: str) -> bool:
+    """Send message to hardware clients"""
+    if cart_id in cart_clients_hardware:
+        client = cart_clients_hardware[cart_id]
+        try:
+            logging.info(f"Sending message to hardware client {cart_id}: {message}")
+            await client.send_json({"type": message})
+            return True
+        except Exception as e:
+            logging.error(f"Failed to send message to hardware client: {e}")
+    return False
