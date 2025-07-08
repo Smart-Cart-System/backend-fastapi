@@ -4,6 +4,7 @@ from models.customer_session import CustomerSession
 from models.product import ProductionData
 from typing import List, Tuple, Dict, Union, Any
 from services.logging_service import LoggingService, SessionEventType, get_logging_service
+from decimal import Decimal, ROUND_HALF_UP
 
 def validate_session(db: Session, session_id: int):
     """Check if session exists and is active"""
@@ -214,6 +215,28 @@ def get_cart_items_by_session(db: Session, session_id: int) -> Tuple[List[CartIt
             total_price += item.product.unit_price * item.quantity
     
     return items, total_price
+
+def get_total_price_by_session(db: Session, session_id: int) -> Decimal:
+    """Calculate total price for all items in a session"""
+    # Validate session
+    session = validate_session(db, session_id)
+    if not session:
+        return Decimal(0)
+    
+    # Get all items with eager loading of products
+    items = db.query(CartItem).filter(
+        CartItem.session_id == session_id
+    ).all()
+    
+    # Calculate total
+    total_price = Decimal(0)
+    for item in items:
+        if hasattr(item, 'product') and item.product:
+            total_price += Decimal(item.product.unit_price) * item.quantity
+
+    total_price = total_price.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    return total_price
+
 
 def get_sessions_summary(db: Session, session_id: int) -> Tuple[List[CartItem], float]:
     """Get all items in a session with total price calculation"""

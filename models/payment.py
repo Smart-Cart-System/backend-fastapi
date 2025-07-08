@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 import enum
-from sqlalchemy import Column, DateTime, Float, Integer, String, ForeignKey, Boolean, Text, Enum
+from sqlalchemy import Column, DateTime, Float, Integer, String, ForeignKey, Boolean, Text, Enum, Numeric
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from database import Base
@@ -20,7 +20,7 @@ class Payment(Base):
     transaction_id = Column(String(255), unique=True, nullable=True)
     payment_id = Column(String(255), nullable=False, unique=True, index=True)
     payment_url = Column(String(255), nullable=False)
-    total_amount = Column(Float, nullable=False)
+    total_amount = Column(Numeric(10,2), nullable=False)
     transaction_status = Column(Enum(PaymentStatusEnum), default=PaymentStatusEnum.pending)
     retry_attempts = Column(Integer, default=0)  # To limit retries
     callback_data = Column(Text, nullable=True)  # Stores raw callback for debugging
