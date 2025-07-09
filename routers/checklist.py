@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 
 from database import get_db
 from schemas.checklist import (
@@ -34,6 +34,17 @@ def get_user_checklists(
 ):
     """Get all checklists for the current user"""
     return checklist_crud.get_user_checklists(db, current_user.id, skip, limit)
+
+@router.get("/pinned", response_model=Optional[ChecklistWithItems])
+def get_pinned_checklist(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get the currently pinned checklist for the current user"""
+    checklist = checklist_crud.get_pinned_checklist(db, current_user.id)
+    if not checklist:
+        return None
+    return checklist
 
 @router.get("/{checklist_id}", response_model=ChecklistWithItems)
 def get_checklist(
@@ -112,3 +123,15 @@ def delete_checklist_item(
     if not deleted:
         raise HTTPException(status_code=404, detail="Item not found or not accessible")
     return {"status": "success"}
+
+@router.put("/{checklist_id}/pin", response_model=Checklist)
+def toggle_pin_status(
+    checklist_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Toggle pin status of a checklist - only one checklist can be pinned per user"""
+    updated = checklist_crud.toggle_pin_checklist(db, checklist_id, current_user.id)
+    if not updated:
+        raise HTTPException(status_code=400, detail="Checklist not found or not authorized to pin it")
+    return updated
