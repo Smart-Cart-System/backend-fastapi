@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from models.checklist import Checklist, ChecklistItem
 from schemas.checklist import ChecklistCreate, ChecklistUpdate, ChecklistItemCreate, ChecklistItemUpdate
+from typing import Optional
 
 def create_checklist(db: Session, checklist: ChecklistCreate, user_id: int):
     db_checklist = Checklist(name=checklist.name, user_id=user_id)
@@ -95,3 +96,29 @@ def delete_checklist_item(db: Session, item_id: int, checklist_id: int, user_id:
     db.delete(db_item)
     db.commit()
     return True
+
+def toggle_pin_checklist(db: Session, checklist_id: int, user_id: int) -> Optional[Checklist]:
+    # Get the checklist to pin/unpin
+    checklist = get_checklist(db, checklist_id, user_id)
+    if not checklist:
+        return None
+        
+    # If we're pinning this checklist, unpin all others first
+    if not checklist.is_pinned:
+        # Unpin all checklists for this user
+        db.query(Checklist).filter(
+            Checklist.user_id == user_id,
+            Checklist.is_pinned == True
+        ).update({"is_pinned": False})
+    
+    # Toggle the pin status of this checklist
+    checklist.is_pinned = not checklist.is_pinned
+    db.commit()
+    db.refresh(checklist)
+    return checklist
+
+def get_pinned_checklist(db: Session, user_id: int) -> Optional[Checklist]:
+    return db.query(Checklist).filter(
+        Checklist.user_id == user_id,
+        Checklist.is_pinned == True
+    ).first()

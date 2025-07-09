@@ -8,6 +8,7 @@ class Checklist(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"))
+    is_pinned = Column(Boolean, default=False)
     
     # Relationships
     user = relationship("User")

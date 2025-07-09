@@ -23,12 +23,14 @@ class ChecklistItem(ChecklistItemBase):
 # Checklist schemas
 class ChecklistBase(BaseModel):
     name: str
+    is_pinned: Optional[bool] = False  
 
 class ChecklistCreate(ChecklistBase):
     items: List[ChecklistItemCreate] = []
 
 class ChecklistUpdate(BaseModel):
     name: Optional[str] = None
+    is_pinned: Optional[bool] = None
 
 class ChecklistWithItems(ChecklistBase):
     id: int
