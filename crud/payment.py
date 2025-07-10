@@ -24,6 +24,11 @@ async def create_online_payment(payment_data: PaymentRequest) -> PaymentAPIRespo
         return PaymentAPIResponse(**response_data)
 
 def create_payment_record(db: Session, payment_data: PaymentRequest, online_payment_response: PaymentAPIResponse, session_id: int, total_price: float):
+    # Check if a payment record already exists for this session
+    existing_payment = db.query(Payment).filter(Payment.session_id == session_id).first()
+    if existing_payment:
+        return existing_payment
+    # Create a new payment record
     try:
         new_payment = Payment(
             payment_id=online_payment_response.data.payment_id,

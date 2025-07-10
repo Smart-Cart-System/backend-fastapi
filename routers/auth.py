@@ -3,10 +3,10 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from datetime import timedelta
 from database import get_db
-from core.security import create_frontend_token, verify_password, check_admin_permissions, get_current_user
+from core.security import create_frontend_token, verify_password, check_admin_permissions, get_current_user, create_refresh_frontend_token, validate_and_refresh
 from models.user import User
 from crud import user as user_crud
-from schemas.user import UserOut, UserCreate, UserBase, PasswordUpdateForm, UserUpdate
+from schemas.user import UserOut, UserCreate, UserBase, PasswordUpdateForm, UserUpdate, RefreshRequest
 from services.logging_service import LoggingService, SecurityEventType, get_logging_service
 from core.config import settings
 from typing import Optional
@@ -71,7 +71,10 @@ def login(request: Request,
     access_token = create_frontend_token(
         data={"sub": user.username}
     )
-    
+    refresh_token = create_refresh_frontend_token(
+        data={"sub": user.username}
+    )
+
     # Log successful login
     logging_service.log_security_event(
         event_type=SecurityEventType.LOGIN_SUCCESS,
@@ -93,6 +96,7 @@ def login(request: Request,
         "phone_number": user.mobile_number,
         "full_name": user.full_name,
         "access_token": access_token, 
+        "refresh_token": refresh_token,
         "token_type": "bearer",
         "user_id": user.id,
         "expires_in": timedelta(hours=6).total_seconds(),
@@ -132,3 +136,16 @@ def update_password(
     
     return {"detail": "Password updated successfully"}
 
+
+@router.post("/refresh-token")
+def refresh_token(
+    request: RefreshRequest,
+    db: Session = Depends(get_db)):
+    # Create new tokens
+    access_token, refresh_token = validate_and_refresh(request.refresh_token, db)
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer",
+        "expires_in": timedelta(days=7).total_seconds()
+    }

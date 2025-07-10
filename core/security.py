@@ -1,6 +1,6 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Union
-from jose import JWTError, jwt
+from jose import JWTError, jwt, ExpiredSignatureError
 from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status, Security, Request
 from fastapi.security import OAuth2PasswordBearer, APIKeyHeader
@@ -27,7 +27,14 @@ def get_password_hash(password):
 
 def create_frontend_token(data: dict):
     to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(hours=settings.FRONTEND_TOKEN_EXPIRE_HOURS)
+    expire = datetime.now(timezone.utc) + timedelta(hours=settings.FRONTEND_TOKEN_EXPIRE_HOURS)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    return encoded_jwt
+
+def create_refresh_frontend_token(data: dict):
+    to_encode = data.copy()
+    expire = datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
@@ -61,8 +68,16 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
                 additional_data={"token_validation": "failed", "reason": "missing_username"}
             )
             raise credentials_exception
+    except ExpiredSignatureError as e:
+        logging_service.log_security_event(
+            event_type=SecurityEventType.UNAUTHORIZED_ACCESS,
+            ip_address="unknown",
+            success=False,
+            failure_reason=f"JWT decode error: {str(e)}",
+            additional_data={"token_validation": "failed", "error": str(e)}
+        )
+        raise HTTPException(status_code=401, detail=str(e))
     except JWTError as e:
-        # Log JWT decode error
         logging_service.log_security_event(
             event_type=SecurityEventType.UNAUTHORIZED_ACCESS,
             ip_address="unknown",
@@ -71,7 +86,8 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
             additional_data={"token_validation": "failed", "error": str(e)}
         )
         raise credentials_exception
-    
+
+
     user = db.query(User).filter(User.username == username).first()
     if user is None:
         # Log user not found during token validation
@@ -156,3 +172,22 @@ def require_admin(current_user: User = Depends(get_current_user)):
             detail="This operation requires admin privileges"
         )
     return current_user
+
+def validate_and_refresh(refresh_token: str, db: Session = Depends(get_db)) -> str:
+    try:
+        payload = jwt.decode(refresh_token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        username: str = payload.get("sub")
+        if username is None:
+            raise HTTPException(status_code=401, detail="Invalid refresh token")
+        
+        user = db.query(User).filter(User.username == username).first()
+        if user is None:
+            raise HTTPException(status_code=401, detail="User not found")
+
+        return create_frontend_token(data={"sub": username}), create_refresh_frontend_token(data={"sub": username})
+    
+    except ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Refresh token expired")
+    
+    except JWTError as e:
+        raise HTTPException(status_code=401, detail="Invalid refresh token")
