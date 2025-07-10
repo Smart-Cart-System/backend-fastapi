@@ -9,6 +9,8 @@ from crud.user import get_user_by_id
 from database import get_db
 from models.payment import PaymentStatusEnum
 from models.session_location import SessionLocation
+from models.user import User
+from core.security import get_current_user
 from dotenv import load_dotenv
 from services.websocket_service import notify_clients, notify_hardware_clients
 import os

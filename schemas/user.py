@@ -34,3 +34,6 @@ class UserUpdate(BaseModel):
     age: Optional[int] = None
     address: Optional[str] = None
     full_name: Optional[str] = None
+
+class RefreshRequest(BaseModel):
+    refresh_token: str
