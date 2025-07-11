@@ -44,24 +44,50 @@ def process_image_with_ocr(image_content: bytes) -> List[str]:
         # Perform document text detection
         response = client.document_text_detection(image=image)
         
-        # Extract words with high confidence
+        # Extract lines instead of individual words
         extracted_items = []
         
-        for page in response.full_text_annotation.pages:
-            for block in page.blocks:
-                for paragraph in block.paragraphs:
-                    # Filter items with confidence > 0.8
-                    if paragraph.confidence > 0.8:
-                        for word in paragraph.words:
-                            word_text = "".join([symbol.text for symbol in word.symbols])
-                            if word_text and len(word_text) > 1:  # Skip single characters
-                                extracted_items.append(word_text)
+        # Option 1: Extract full lines from text annotations
+        if response.text_annotations:
+            # The first text_annotation contains the entire text
+            full_text = response.text_annotations[0].description
+            # Split by newlines to get individual lines
+            lines = full_text.split('\n')
+            # Filter out empty lines and single characters
+            extracted_items = [line.strip() for line in lines if line.strip() and len(line.strip()) > 1]
         
-        if not extracted_items:
-            # If no high-confidence words were found, try extracting full text
-            extracted_items = response.text_annotations[0].description.split("\n") if response.text_annotations else []
-            
+        # Option 2 (fallback): Try to reconstruct lines from blocks
+        if not extracted_items and response.full_text_annotation:
+            for page in response.full_text_annotation.pages:
+                for block in page.blocks:
+                    # Group words by their vertical position to form lines
+                    lines = {}
+                    for paragraph in block.paragraphs:
+                        if paragraph.confidence > 0.8:
+                            # Get paragraph bounding box to determine the line
+                            if paragraph.bounding_box:
+                                # Use the top y-coordinate as a key to group words on same line
+                                y_position = paragraph.bounding_box.vertices[0].y
+                                
+                                # Create the line text by joining all words
+                                line_text = " ".join([
+                                    "".join([symbol.text for symbol in word.symbols])
+                                    for word in paragraph.words
+                                ])
+                                
+                                # Add or append to line with this y-position
+                                if y_position in lines:
+                                    lines[y_position] += " " + line_text
+                                else:
+                                    lines[y_position] = line_text
+                    
+                    # Add all lines from this block
+                    for line_text in lines.values():
+                        if line_text and len(line_text) > 1:
+                            extracted_items.append(line_text.strip())
+        
         return extracted_items
+    
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
