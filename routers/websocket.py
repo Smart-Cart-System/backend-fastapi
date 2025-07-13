@@ -79,8 +79,8 @@ async def echo_hardware_message(message: str, current_user: User = Depends(get_c
     return {"status": "error"}
 
 @router.post("/echo/hardware/{cart_id}")
-async def echo_hardware_message(cart_id: int, message: str, db: Session = Depends(get_db)):
+async def echo_hardware_message(cart_id: int, session_id: int, message: str, db: Session = Depends(get_db)):
     logging.info(f"Echoing hardware message from user {cart_id}: {message}")
-    if await echo_hardware_service(cart_id, message):
+    if await echo_hardware_service(cart_id,session_id, message):
         return {"status": "success"}
     return {"status": "error"}
