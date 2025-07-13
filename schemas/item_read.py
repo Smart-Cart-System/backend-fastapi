@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from typing import Optional  # Add this import
 
 class ItemReadRequest(BaseModel):
     sessionID: int
@@ -11,7 +12,7 @@ class ItemReadResponse(BaseModel):
     unit_price: float
     product_size: str
     barcode: int 
-    image_url: str = None 
+    image_url: Optional[str] = None  # Change this line to use Optional
     
     class Config:
         from_attributes = True
