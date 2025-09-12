@@ -71,6 +71,9 @@ def get_active_session_by_cart(db: Session, cart_id: int):
     return db.query(CustomerSession).filter(CustomerSession.cart_id == cart_id, 
                                            CustomerSession.is_active == True).first()
 
+def get_session_by_cart(db: Session, cart_id: int):
+    return db.query(CustomerSession).filter(CustomerSession.cart_id == cart_id).order_by(CustomerSession.session_id.desc()).first()
+
 async def finish_session(db: Session, session_id: int):
     logging_service = get_logging_service(db)
     session_start_time = datetime.now()

@@ -7,8 +7,10 @@ from sqlalchemy.orm import Session
 from database import get_db
 from core.security import get_current_user
 from models.user import User
-from crud.customer_session import get_active_session_by_user
+from crud.customer_session import get_active_session_by_user, get_session, get_session_by_cart
 from core.security import verify_pi_api_key
+from crud.payment import get_payment_by_session_id
+from models.customer_session import CustomerSession
 from services.websocket_service import (
     register_client, 
     register_hardware_client, 
@@ -55,7 +57,21 @@ async def websocket_cart_endpoint(websocket: WebSocket, cart_id: int, db: Sessio
         # Register hardware connection
         await register_hardware_client(cart_id, websocket)
         await websocket.send_json({"status": "connected", "message": "Hardware connection established"})
-        
+        session = get_session_by_cart(db, cart_id)
+        session_id = session.session_id
+        payment = get_payment_by_session_id(db, session_id)
+        if payment:
+            if payment.transaction_status == "pending":
+                await websocket.send_json({"type":"payment_created", "data": session_id})
+            elif payment.transaction_status == "successful": 
+                await websocket.send_json({"type":"end_session", "data": session_id})
+        elif session:
+            if session.is_active:
+                await websocket.send_json({"type":"session_started", "data": session_id})
+            else:
+                await websocket.send_json({"type":"end_session", "data": session_id})
+        else:
+            await websocket.send_json({"type":"generate_qr", "data": None})
         # Keep connection alive
         while True:
             # Process incoming messages
