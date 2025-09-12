@@ -62,16 +62,16 @@ async def websocket_cart_endpoint(websocket: WebSocket, cart_id: int, db: Sessio
         payment = get_payment_by_session_id(db, session_id)
         if payment:
             if payment.transaction_status == "pending":
-                await websocket.send_json({"type":"payment_created", "data": session_id})
+                await websocket.send_json({"type":"payment_created", "session_id": session_id})
             elif payment.transaction_status == "successful": 
-                await websocket.send_json({"type":"end_session", "data": session_id})
+                await websocket.send_json({"type":"end_session", "session_id": session_id})
         elif session:
             if session.is_active:
-                await websocket.send_json({"type":"session_started", "data": session_id})
+                await websocket.send_json({"type":"session_started", "session_id": session_id})
             else:
-                await websocket.send_json({"type":"end_session", "data": session_id})
+                await websocket.send_json({"type":"end_session", "session_id": session_id})
         else:
-            await websocket.send_json({"type":"generate_qr", "data": None})
+            await websocket.send_json({"type":"generate_qr", "session_id": None})
         # Keep connection alive
         while True:
             # Process incoming messages
