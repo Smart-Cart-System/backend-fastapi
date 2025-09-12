@@ -3,6 +3,9 @@ from fastapi.exceptions import RequestValidationError, ResponseValidationError
 from sqlalchemy.exc import SQLAlchemyError
 from pydantic import ValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
+import time
+from fastapi import Request, Response
+from starlette.middleware.base import BaseHTTPMiddleware
 
 # Local imports
 from core.db_middleware import DBConnectionMiddleware
@@ -89,6 +92,59 @@ app.add_exception_handler(StarletteHTTPException, not_found_exception_handler)
 # Add this after creating the FastAPI app and before other middleware
 # In the add_middlewares function or directly in main.py if not using that function
 app.add_middleware(DBConnectionMiddleware)
+
+# Response Time Middleware
+class ResponseTimeMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        start_time = time.time()
+        response = await call_next(request)
+        process_time = time.time() - start_time
+        
+        # Convert to milliseconds and round to 2 decimal places
+        process_time_ms = round(process_time * 1000, 2)
+        
+        # Add timing to response headers
+        response.headers["X-Process-Time"] = f"{process_time_ms} ms"
+        
+        # If response is JSON, modify the response body and create new response
+        if response.headers.get("content-type") == "application/json":
+            try:
+                # Get the original response body
+                body = b""
+                async for chunk in response.body_iterator:
+                    body += chunk
+                
+                # Parse JSON body
+                import json
+                data = json.loads(body)
+                
+                # Add timing info
+                if isinstance(data, dict):
+                    data["response_time_ms"] = process_time_ms
+                
+                # Create new JSON string and encode it
+                new_body = json.dumps(data).encode()
+                
+                # Create new response WITHOUT copying the Content-Length header
+                headers = dict(response.headers)
+                if "content-length" in headers:
+                    del headers["content-length"]  # Remove Content-Length header
+                
+                return Response(
+                    content=new_body,
+                    status_code=response.status_code,
+                    headers=headers,
+                    media_type="application/json"
+                )
+            except Exception as e:
+                # If any error occurs during processing, return the original response
+                print(f"Error in ResponseTimeMiddleware: {e}")
+                return response
+                
+        return response
+
+# Add this after defining ResponseTimeMiddleware
+app.add_middleware(ResponseTimeMiddleware)
 
 # Include routers
 app.include_router(auth.router)
