@@ -194,7 +194,7 @@ def remove_cart_item(db: Session, session_id: int, barcode: int):
                 "product_name": product.description
             }
         )
-        return None, None
+        return cart_item, None
 
 def get_cart_items_by_session(db: Session, session_id: int) -> Tuple[List[CartItem], float]:
     """Get all items in a session with total price calculation"""
