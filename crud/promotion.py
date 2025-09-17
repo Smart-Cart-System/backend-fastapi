@@ -15,7 +15,8 @@ def get_active_promotions(db: Session, skip: int = 0, limit: int = 100):
         .options(joinedload(PromotionData.aisle))\
         .filter(
             PromotionData.promotion_starting_date <= today,
-            PromotionData.promotion_ending_date >= today
+            PromotionData.promotion_ending_date >= today,
+            ProductionData.image_url.isnot(None)
         )\
         .offset(skip)\
         .limit(limit)\
@@ -60,6 +61,7 @@ def get_promotion_by_item(db: Session, item_no: int):
             PromotionData.item_no_ == item_no,
             PromotionData.promotion_starting_date <= today,
             PromotionData.promotion_ending_date >= today
+
         )\
         .first()
     
